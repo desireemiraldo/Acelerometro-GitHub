@@ -1,13 +1,18 @@
-function [X] = ReadDelsys(FilePath, ChannelType, Signal)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+function Acc = ReadDelsys(FilePath, ChannelType, Signal)
 
-Path = 'Acelerometro - Aug17\Coletas\';
-ChannelType = 'AUX';
-Signal = {'IM ACC Pitch', 'IM ACC Roll', 'IM ACC Yaw'};
+Data =  readtable(FilePath);
 
 
+Acc = []; t = [];
 
-'C:\Users\desir\Downloads\Acelerometro - Aug17\Coletas\Acc_170731_DCM_1-Delsys 1.csv'
+for i = 1: height(Data)
+   if  strcmp(Data.Var1(i),ChannelType) && strcmp(Data.Var2(i),Signal)
+       Acc = [Acc; Data(i,5:end-1)];
+       t = [t; Data(i,4)];
+   end
 end
+Acc = table2array(Acc);
+t = str2num(cell2mat(t.Var4));
 
+Acc = [t,Acc];
+end

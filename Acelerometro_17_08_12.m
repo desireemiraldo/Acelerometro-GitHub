@@ -16,12 +16,14 @@ clear all; clc; close all
 % Trial = {'1' '2' '3' '4' '5'}
 % ShankL = 2;ShankR = 3;
 % Name = 'Acc_170731_RNW_';
+% csv = '-Delsys 1.csv';
 % Trial = {'1' '2' '4' '5'};
 Name = 'Acc_170731_DCM_';
+csv = '-Delsys 1.csv';
 Trial = {'1' '2' '3' '4' };
 ShankL = 5;ShankR = 4;
 
-Path = 'C:\Users\desir\Downloads\Acelerometro - Aug17\Coletas\';
+Path = 'C:\Users\desir\Desktop\Acelerometro - Aug17\Coletas\';
 ChannelType = 'AUX';
 Signal = {'IM ACC Pitch', 'IM ACC Roll', 'IM ACC Yaw'};
 
@@ -31,10 +33,11 @@ y = zeros(149,2*length(Trial));
 for k = 1: length(Trial)
     File = [Name,Trial{k}];
     FilePath = [Path,File];
-    Pitch = ReadDelsys([FilePath,'-Delsys 1.csv'], ChannelType, Signal(1));
-    Roll = ReadDelsys([FilePath,'-Delsys 1.csv'], ChannelType, Signal(2));
-    Yaw = ReadDelsys([FilePath,'-Delsys 1.csv'], ChannelType, Signal(3));
-    EMG = ReadDelsys([FilePath,'-Delsys 1.csv'], 'IMEMG', 'EMG');
+    
+    Pitch = ReadDelsys([FilePath,csv], ChannelType, Signal(1));
+    Roll = ReadDelsys([FilePath,csv], ChannelType, Signal(2));
+    Yaw = ReadDelsys([FilePath,csv], ChannelType, Signal(3));
+    EMG = ReadDelsys([FilePath,csv], 'IMEMG', 'EMG');
     
     % Cortex data
     Forces = importdata([FilePath,'.forces']);
