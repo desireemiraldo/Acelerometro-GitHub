@@ -1,4 +1,5 @@
-%% Implements the basic Orthogonal Least Squares Algorithm. 
+%% Implements the basic Orthogonal Least Squares Algorithm.
+% by Renato Naville Watanabe
 % p is the matrix of the regressors (one regressor per column)
 % y is a the output vector
 % beta is a vector with the coefficients for each regressor
