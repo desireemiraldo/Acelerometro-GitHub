@@ -8,7 +8,7 @@ Data =  readtable(FilePath);
 
 Acc = []; t = [];
 
-for i = 1: heigth(Data)
+for i = 1: height(Data)
    if  strcmp(Data.Var1(i),ChannelType) && strcmp(Data.Var2(i),Signal)
        Acc = [Acc; Data(i,5:end-1)];
        t = [t; Data(i,4)];
