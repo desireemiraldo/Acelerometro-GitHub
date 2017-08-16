@@ -10,11 +10,11 @@ clear all; clc; close all
 %                 - Sensor 2  -  Shank R
 % --- First support on FP : always with the RIGHT foot
 
-%% -- Load data
+%% -- About the files
 
 Path = 'C:\Users\BMClab\Downloads\Desiree\Acelerometro\Acelerometro-GitHub\Coletas\';
 
-%Delsys data
+% Subjects
 
 Name = 'Acc_170803_EGS_';
 csv = '-Delsys 1.csv';
@@ -24,17 +24,20 @@ ShankL = 2;ShankR = 3;
 % Name = 'Acc_170731_RNW_';
 % csv = '-Delsys 1.csv';
 % Trial = {'1' '2' '4' '5'};
-%ShankL = 5;ShankR = 4;
+% ShankL = 5;ShankR = 4;
 
 % Name = 'Acc_170731_DCM_';
 % csv = '-Delsys 1.csv';
 % Trial = {'1' '2' '3' '4' };
 % ShankL = 5;ShankR = 4;
 
+%% -- Initializing some variables
+
+% -- Sample Frequencies
 Fs = 148.39; % Delsys sensor
 FsFP = 300;  % force plates
 
-
+% --
 ChannelType = 'AUX';
 Signal = {'IM ACC Pitch', 'IM ACC Roll', 'IM ACC Yaw',...
     'IM GYR Pitch', 'IM GYR Roll', 'IM GYR Yaw'};
@@ -47,12 +50,10 @@ Sensors = {'ShankR','ShankL'};
 % -- Filter
 [n,Wn] = buttord(10/(Fs/2),20/(Fs/2),1,60);
 [b,a] = butter(n, Wn);
-% -- Linear combination
-p = zeros(ceil(Fs),length(Var),length(Sensors)*length(Trial));
-y = zeros(ceil(Fs),2*length(Trial));
 
 
 for k = 1: length(Trial)
+    
     File = [Name,Trial{k}];
     FilePath = [Path,File];
     
@@ -78,7 +79,7 @@ for k = 1: length(Trial)
     end
     
     
-    %% -- Resultant
+    %% -- Resultants
     
     % Delsys
     ACC = [ACCPitch(:,1), sqrt(ACCPitch(:,2:end).^2 + ACCRoll(:,2:end).^2 + ACCYaw(:,2:end).^2)];
@@ -87,42 +88,40 @@ for k = 1: length(Trial)
     GYR = [GYRPitch(:,1), sqrt(GYRPitch(:,2:end).^2 + GYRRoll(:,2:end).^2 + GYRYaw(:,2:end).^2)];
     GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
     
-    % Kistler
-    % Acc1 = [Acc1, sqrt(Accx1.^2 + Accy1.^2 + Accz1.^2)];
-    % Acc2 = Acc1;
-    % Acc2 = [Acc2, sqrt(Accx2.^2 + Accy2.^2 + Accz2.^2)];
-    
     %% Linear combination of different variables apllied in one gait cycle
     %  Gait cycle = HeelContact + 1 sec
-    
     instant = importdata('Instantes_gait.txt',',');
     [HeelContactInstant] = Instants(instant,File);
     HeelContact = floor(HeelContactInstant*Fs);
     
     % --- Building inputs for Orthogonal Least Squares Algorithm
     % --- (ols.m) implemented by Renato Naville Watanabe
-    for j = 1 : length(Sensors)
-        first(j) = HeelContact(j,1);
-        last(j) =  HeelContact(j,1)+floor(Fs);
+    for i = 1 : length(Sensors)
+        first(i) = HeelContact(i,1);
+        last(i) =  HeelContact(i,1)+floor(Fs);
         
-        %% --- ISSO NÃO DEVE SER REPETIDO A CADA TRIAL
-        for i = 1: length(Var)
+        for j = 1: length(Var)
+            % -- Combinatorial analysis to find the best set of variables
+            % to be used in linear combination
+            Combinatorics = nchoosek(Var,j);
             
-            Combinations = nchoosek(Var,i);
-            
-            for kk = 1 : size (Combinations,1)
+            for kk = 1 : size (Combinatorics,1)
                 
-                Features = Combinations(kk,:);
+                Features = Combinatorics(kk,:);
                 
-         %% --- ISSO NÃO DEVE SER REPETIDO A CADA TRIAL
+                % -- Initializing variables for linear combination
+                p = zeros(ceil(Fs),length(Var),length(Sensors)*length(Trial));
+                y = zeros(ceil(Fs),2*length(Trial));
                 
-                p(:,i,k+(j-1)*length(Trial)) = eval([Features{i},'(first:last,eval(Sensors{j}))']);
-                
-                stimulWin = exp(-0.5*((ACC(:,1)-(HeelContactInstant(1,2)-50e-3))/(50e-3/3)).^2);
-                
-                y(:,k+(j-1)*length(Trial)) = stimulWin(first:last);
+                for jj = 1 : length (Features)
+                    p(:,jj,k+(i-1)*length(Trial)) = eval([Features{jj},'(first:last,eval(Sensors{i}))']);
+                    
+                    stimulWin = exp(-0.5*((ACC(:,1)-(HeelContactInstant(1,2)-50e-3))/(50e-3/3)).^2);
+                    
+                    y(:,k+(i-1)*length(Trial)) = stimulWin(first:last);
+                    
+                end            
             end
-            
         end
     end
     
