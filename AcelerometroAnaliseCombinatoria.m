@@ -14,7 +14,7 @@ clear all; clc; close all
 
 Path = 'C:\Users\BMClab\Downloads\Desiree\Acelerometro\Acelerometro-GitHub\Coletas\';
 
-% Subjects
+% -- Subjects
 
 Name = 'Acc_170803_EGS_';
 csv = '-Delsys 1.csv';
@@ -51,105 +51,106 @@ Sensors = {'ShankR','ShankL'};
 [n,Wn] = buttord(10/(Fs/2),20/(Fs/2),1,60);
 [b,a] = butter(n, Wn);
 
+%% Load Data
 
-for k = 1: length(Trial)
+for k = 1: length(Var)
+    % -- Combinatorial analysis to find the best set of variables
+    % to be used in linear combination
+    Combinatorics = nchoosek(Var,k);
     
-    File = [Name,Trial{k}];
-    FilePath = [Path,File];
-    
-    for i = 1:length(Signal)
-        VarName = strrep(strrep(Signal{i},'IM ',''),' ','');
-        eval([VarName '= ReadDelsys([FilePath,csv], ChannelType, Signal(i));']);
-        temp = eval(VarName);
-        %Filtering
-        eval([VarName 'F' ' = [temp(:,1),filtfilt(b,a,temp(:,2:end))];']);
-    end
-    
-    EMG = ReadDelsys([FilePath,csv], 'IMEMG', 'EMG');
-    
-    cte = ones(size(eval(VarName),1),size(eval(VarName),2));
-    
-    % Cortex data
-    Forces = importdata([FilePath,'.forces']);
-    Fy = (Forces.data(:,1) -1)/300;
-    for i =1 : length(Forces.colheaders)
-        if strcmp(Forces.colheaders{i}(1:2), 'FY')
-            Fy = [Fy, Forces.data(:,i)];
-        end
-    end
-    
-    
-    %% -- Resultants
-    
-    % Delsys
-    ACC = [ACCPitch(:,1), sqrt(ACCPitch(:,2:end).^2 + ACCRoll(:,2:end).^2 + ACCYaw(:,2:end).^2)];
-    ACCF = [ACCPitch(:,1), sqrt(ACCPitchF(:,2:end).^2 + ACCRollF(:,2:end).^2 + ACCYawF(:,2:end).^2)];
-    
-    GYR = [GYRPitch(:,1), sqrt(GYRPitch(:,2:end).^2 + GYRRoll(:,2:end).^2 + GYRYaw(:,2:end).^2)];
-    GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
-    
-    %% Linear combination of different variables apllied in one gait cycle
-    %  Gait cycle = HeelContact + 1 sec
-    instant = importdata('Instantes_gait.txt',',');
-    [HeelContactInstant] = Instants(instant,File);
-    HeelContact = floor(HeelContactInstant*Fs);
-    
-    % --- Building inputs for Orthogonal Least Squares Algorithm
-    % --- (ols.m) implemented by Renato Naville Watanabe
-    for i = 1 : length(Sensors)
-        first(i) = HeelContact(i,1);
-        last(i) =  HeelContact(i,1)+floor(Fs);
+    for kk = 1 : size (Combinatorics,1)
         
-        for j = 1: length(Var)
-            % -- Combinatorial analysis to find the best set of variables
-            % to be used in linear combination
-            Combinatorics = nchoosek(Var,j);
+        Features = Combinatorics(kk,:);
+        
+        % -- Initializing variables for linear combination
+        p = zeros(ceil(Fs),length(Features),length(Sensors)*length(Trial));
+        y = zeros(ceil(Fs),2*length(Trial));
+        
+        for j = 1: length(Trial)
             
-            for kk = 1 : size (Combinatorics,1)
-                
-                Features = Combinatorics(kk,:);
-                
-                % -- Initializing variables for linear combination
-                p = zeros(ceil(Fs),length(Var),length(Sensors)*length(Trial));
-                y = zeros(ceil(Fs),2*length(Trial));
-                
+            File = [Name,Trial{j}];
+            FilePath = [Path,File];
+            
+            for i = 1:length(Signal)
+                VarName = strrep(strrep(Signal{i},'IM ',''),' ','');
+                eval([VarName '= ReadDelsys([FilePath,csv], ChannelType, Signal(i));']);
+                temp = eval(VarName);
+                %Filtering
+                eval([VarName 'F' ' = [temp(:,1),filtfilt(b,a,temp(:,2:end))];']);
+            end
+            
+            EMG = ReadDelsys([FilePath,csv], 'IMEMG', 'EMG');
+            
+            Cte = ones(size(eval(VarName),1),size(eval(VarName),2));
+            
+            % Cortex data
+            Forces = importdata([FilePath,'.forces']);
+            Fy = (Forces.data(:,1) -1)/300;
+            for i =1 : length(Forces.colheaders)
+                if strcmp(Forces.colheaders{i}(1:2), 'FY')
+                    Fy = [Fy, Forces.data(:,i)];
+                end
+            end
+            
+            
+            %% -- Resultants
+            
+            % Delsys
+            ACC = [ACCPitch(:,1), sqrt(ACCPitch(:,2:end).^2 + ACCRoll(:,2:end).^2 + ACCYaw(:,2:end).^2)];
+            ACCF = [ACCPitch(:,1), sqrt(ACCPitchF(:,2:end).^2 + ACCRollF(:,2:end).^2 + ACCYawF(:,2:end).^2)];
+            
+            GYR = [GYRPitch(:,1), sqrt(GYRPitch(:,2:end).^2 + GYRRoll(:,2:end).^2 + GYRYaw(:,2:end).^2)];
+            GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
+            
+            %% Linear combination of different variables apllied in one gait cycle
+            %  Gait cycle = HeelContact + 1 sec
+            instant = importdata('Instantes_gait.txt',',');
+            [HeelContactInstant] = Instants(instant,File);
+            HeelContact = floor(HeelContactInstant*Fs);
+            
+            % --- Building inputs for Orthogonal Least Squares Algorithm
+            % --- (ols.m) implemented by Renato Naville Watanabe
+            for i = 1 : length(Sensors)
+                first(i) = HeelContact(i,1);
+                last(i) =  HeelContact(i,1)+floor(Fs);
+                               
                 for jj = 1 : length (Features)
-                    p(:,jj,k+(i-1)*length(Trial)) = eval([Features{jj},'(first:last,eval(Sensors{i}))']);
+                    p(:,jj,j+(i-1)*length(Trial)) = eval([Features{jj},'(first:last,eval(Sensors{i}))']);
                     
                     stimulWin = exp(-0.5*((ACC(:,1)-(HeelContactInstant(1,2)-50e-3))/(50e-3/3)).^2);
                     
-                    y(:,k+(i-1)*length(Trial)) = stimulWin(first:last);
+                    y(:,j+(i-1)*length(Trial)) = stimulWin(first:last);
                     
-                end            
+                end
+            end
+            
+            %     HeelContact = ceil(HeelContactInstant*FsFP);
+            %     for i = 1: length(Sensors)
+            %         first1(i) = HeelContact(i,1);
+            %         last1(i) =  HeelContact(i,1)+floor(FsFP);
+            %     end
+            %     figure(j);
+            %     subplot(2,1,1); plot(Fy(first1(1):last1(1),1), Fy(first1(1):last1(1),2:end));
+        end
+        beta = ols(p,y); % Coefs for linear combination
+        
+        % --- Applying Linear Combination
+        LinearCombination = zeros(ceil(Fs),1);
+        for i = 1:length(Var)
+            for j = 1 : length(Sensors)*length(Trial)
+                LinearCombination = LinearCombination + beta(i,j)*p(:,i,j);
             end
         end
-    end
-    
-    %     HeelContact = ceil(HeelContactInstant*FsFP);
-    %     for j = 1: length(Sensors)
-    %         first1(j) = HeelContact(j,1);
-    %         last1(j) =  HeelContact(j,1)+floor(FsFP);
-    %     end
-    %     figure(k);
-    %     subplot(2,1,1); plot(Fy(first1(1):last1(1),1), Fy(first1(1):last1(1),2:end));
-end
-
-beta = ols(p,y); % Coefs for linear combination
-
-% --- Applying LC
-LinearCombination = zeros(ceil(Fs),1);
-for i = 1:length(Var)
-    for j = 1 : length(Sensors)*length(Trial)
-        LinearCombination = LinearCombination + beta(i,j)*p(:,i,j);
+        
+        % for i = j:length(Trial)
+        % figure(j)
+        % subplot(2,1,2); plot(LinearCombination);
+        % end
+        
+        %% CONTINUAR DAQUI
+        % --- Checking the combination's quality
     end
 end
-
-%%
-
-% for i = 1:length(Trial)
-% figure(i)
-% subplot(2,1,2); plot(LinearCombination);
-% end
 
 %% -- Plots
 % % % %
