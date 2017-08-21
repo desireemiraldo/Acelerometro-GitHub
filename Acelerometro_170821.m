@@ -12,7 +12,7 @@ clear all; clc; close all
 
 %% -- About the files
 
-Path = 'C:\Users\BMClab\Downloads\Desiree\Acelerometro\Acelerometro-GitHub\Coletas\';
+Path = '.\Coletas\';
 
 % -- Settings
 
@@ -43,7 +43,7 @@ Signal = {'IM ACC Pitch', 'IM ACC Roll', 'IM ACC Yaw',...
     'IM GYR Pitch', 'IM GYR Roll', 'IM GYR Yaw'};
 
 Var = {'ACCF','ACCPitchF','ACCRollF','ACCYawF',...
-    'GYR','GYRPitchF','GYRRollF','GYRYawF'};%,'AccF.^2'}; %Used in linear combination
+    'GYRF','GYRPitchF','GYRRollF','GYRYawF','Cte'};%,'AccF.^2'}; %Used in linear combination
 
 Sensors = {'ShankR','ShankL'};
 
@@ -54,23 +54,21 @@ Sensors = {'ShankR','ShankL'};
 % -- Standard deviation to be used in Linear Combination
 sd = 50e-3;
 
-% -- To plot results
-% figure(1); figure(2)
 
 %% Load Data
-
-for k = 3: length(Var)
+n = 0;
+for k = 1: length(Var)
     % -- Combinatorial analysis to find the best set of variables
     % to be used in linear combination
     Combinatorics = nchoosek(Var,k);
     
     for kk = 1 : size (Combinatorics,1)
-        
+        n = n+1;
         Features = Combinatorics(kk,:);
         
         % -- Initializing variables for linear combination
-        p = [];%zeros(ceil(Fs),length(Features),length(Sensors)*length(Trial));
-        y = [];%zeros(ceil(Fs),2*length(Trial));
+        p = zeros(ceil(Fs),length(Features),length(Sensors)*length(Trial));
+        y = zeros(ceil(Fs),2*length(Trial));
         
         for j = 1: length(Trial)
             
@@ -99,8 +97,8 @@ for k = 3: length(Var)
             end
             
             Fy(:,6:8) = Fy(:,6:8)/10;
-
-           
+            
+            
             %% -- Resultants
             
             % Delsys
@@ -111,145 +109,148 @@ for k = 3: length(Var)
             GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
             
             %% Linear combination of different variables apllied in one gait cycle
-            %  
+            %
             instant = importdata('Instantes_gait.txt',',');
-            [HC, TO] = Instants(instant,File);
-            HeelContact(:,:,j) = HC;
-            ToeOff(:,:,j) = TO;
-            HeelContactInd(:,:,j) = floor(HC*Fs);
+            [HeelContact, ToeOff] = Instants(instant,File);
+            HeelContactInd = floor(HeelContact*Fs);
+            
             % --- Building inputs for Orthogonal Least Squares Algorithm
             % --- (ols.m) implemented by Renato Naville Watanabe
             for i = 1 : length(Sensors)
-                first(i) = HeelContactInd(i,1,j);
+                first(i) = HeelContactInd(i,1);
                 % last(i) =  HeelContactInd(i,2);
-                last(i) =  HeelContactInd(i,1,j)+floor(Fs);
-                               
+                last(i) =  HeelContactInd(i,1)+floor(Fs);
+                
                 for jj = 1 : length (Features)
                     p(:,jj,j+(i-1)*length(Trial)) = eval([Features{jj},'(first(i):last(i),eval(Sensors{i}))']);
                     
-                    stimulWin = exp(-0.5*((ACC(:,1)-(TO(1,1)- sd))/(sd/3)).^2);
+                    stimulWin = exp(-0.5*((ACC(:,1)-(ToeOff(i,1)- sd))/(sd/3)).^2);
                     
-                    y(:,j+(i-1)*length(Trial)) = stimulWin(first:last);
+                    y(:,j+(i-1)*length(Trial)) = stimulWin(first(i):last(i));
                     
                 end
             end
             
             % Plot Fy
-            HeelContactInd = ceil(HC*FsFP);
+            HeelContactInd = ceil(HeelContact*FsFP);
             for i = 1: length(Sensors)
-                first1(i) = HeelContactInd(i,1,j);
-                % last1(i) =  HeelContactInd(i,2,j);
-                last1(i) =  HeelContactInd(i,1,j)+ceil(FsFP);
+                firstFP(i) = HeelContactInd(i,1);
+                % lastFP(i) =  HeelContactInd(i,2);
+                lastFP(i) =  HeelContactInd(i,1)+ceil(FsFP);
             end
             for i = 1 : length(Sensors)
-                cycle1 = ((first1(i):1:last1(i))-first1(i))/(last1(i)-first1(i));
-                figure(i);
-                subplot(length(Trial)+1,1,j); plot(cycle1, Fy(first1(i):last1(i),2:end));
+                cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
+                figure(j+(i-1)*length(Trial));
+                subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
+                title([Name,Trial{j},' (',Sensors{i},')']);
             end
         end
         beta = ols(p,y); % Coefs for linear combination
-        betaM = mean(beta,2);
+        betaM = mean(beta(:,1:length(Trial)),2);
         
         % --- Applying Linear Combination
-        LinearCombination = zeros(ceil(Fs),1);
-        for i = 1:length(Features)
-            for j = 1 : length(Sensors)*length(Trial)
-                LinearCombination = LinearCombination + beta(i,j)*p(:,i,j);
-                % LinearCombination = LinearCombination + betaM(i)*p(:,i,j);
+        TP = 0; FP = 0; 
+        for j = 1 : length(Trial)
+            for i = 1 : length(Sensors)
+                LinearCombination(:,j+(i-1)*length(Trial)) = p(:,:,j+(i-1)*length(Trial))*betaM;
+                
+                cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
+                ToeOffInd(i) = (floor(ToeOff(i)*Fs)-first(i))/(last(i)-first(i));
+                figure(j+(i-1)*length(Trial))
+                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
+                
+                % --- Checking the combination's quality
+                
+                threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
+                [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
+                
+                Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+                set(Line,'Clipping','off')
+                
+                for w = 1: length (locs)
+                    if locs(w)<= ToeOffInd(i) && locs(w)>= ToeOffInd(i)-.1
+                        TP = TP+1;
+                    end
+                    if locs(w)< ToeOffInd(i)-.1  
+                        FP = FP+1;
+                    end
+                    if locs(w)> ToeOffInd(i)
+                       FP = FP+1;
+                    end    
+                end
             end
         end
+        FN = length(Sensors)*length(Trial)- TP;
+        TN = 2*length(Sensors)*length(Trial)- FP;
+        %keyboard %breakpoint
         
-        for i = 1 : length(Sensors)
-            cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
-            
-            ToeOffInd(i,:,j) = (floor(TO*Fs)-first(i))/(last(i)-first(i));
-            
-            figure(i)
-            subplot(length(Trial)+1,1,length(Trial)+1); 
-            plot(cycle,LinearCombination);
-            ylim([-1 3.5]);
-        end
+        % --- save
+        structSave(n) = struct('Trial',{File},'k',{k},'Features',{Features},...
+            'TP',{TP},'FN',{FN},'TN',{TN},'FP',{FP},'beta',{beta});
+        % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
         
-        
-
-        %% CONTINUAR DAQUI
-        % --- Checking the combination's quality
-        
-        threshold = (max(LinearCombination))*0.75;
-        % threshold = (max(LinearCombination)-min(LinearCombination))*0.75;
-        [pks,locs] = findpeaks(LinearCombination,Fs,'MinPeakHeight',threshold);
-        
-        for i = 1 : length(Sensors)
-            figure(i)
-            subplot(length(Trial)+1,1,length(Trial)+1);
-            Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-            set(Line,'Clipping','off')
-        end
-
-
-        
-        keyboard %breakpoint
     end
 end
 
+save('ResultadosEGS.mat','structSave')
 %% -- Plots
-% % 
+
 % % figure;
 % % subplot(3,1,1); plot(Fy(:,1), Fy(:,2:end));
 % % legend({'1','2','3','4','5','6','7'})
-% %
+% % 
 % % %Delsys
 % % subplot(3,1,2); plot(ACC(:,1), ACC(:,ShankL),ACCF(:,1), ACCF(:,ShankL)); ylabel('Shank L')
 % % title('Resultant'); legend('Raw','Filtered')
 % % subplot(3,1,3); plot(ACC(:,1), ACC(:,ShankR),ACCF(:,1), ACCF(:,ShankR)); ylabel('Shank R')
 % % % Kistler
-% % %subplot(3,1,2); plot(Acc1(:,1),Acc1(:,ShankL)); ylabel('Shank L')
+% % %subplot(3,1,2); plot(ACC1(:,1),ACC1(:,ShankL)); ylabel('Shank L')
 % % %title('Resultant')
-% % %subplot(3,1,3); plot(Acc2(:,1),Acc2(:,ShankL)); ylabel('Shank R')
+% % %subplot(3,1,3); plot(ACC2(:,1),ACC2(:,ShankL)); ylabel('Shank R')
 % % ylim([-2 2]);
 % % PlotInstants( instant, File )
-% %
+% % 
 % % %--
 % % figure;
 % % subplot(3,1,1)
 % % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% %
-% % subplot(3,1,2); plot(Acc(:,1), Pitch(:,ShankL),Acc(:,1), PitchF(:,ShankL)); ylabel('Shank L')
+% % 
+% % subplot(3,1,2); plot(ACC(:,1), ACCPitch(:,ShankL),ACC(:,1), ACCPitchF(:,ShankL)); ylabel('Shank L')
 % % title('Pitch'); legend('Raw','Filtered')
-% % subplot(3,1,3); plot(Acc(:,1), Pitch(:,ShankR),AccF(:,1), PitchF(:,ShankR)); ylabel('Shank R')
-% % ylim([-2 2]);
+% % subplot(3,1,3); plot(ACC(:,1), ACCPitch(:,ShankR),ACCF(:,1), ACCPitchF(:,ShankR)); ylabel('Shank R')
+% % ylim([min(ACCPitch(:,ShankL))-1, max(ACCPitch(:,ShankL))+1]);
 % % PlotInstants( instant, File )
 % % %--
 % % figure;
 % % subplot(3,1,1)
 % % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% % subplot(3,1,2); plot(Acc(:,1), Roll(:,ShankL), Acc(:,1), RollF(:,ShankL));  ylabel('Shank L')
+% % subplot(3,1,2); plot(ACC(:,1), ACCRoll(:,ShankL), ACC(:,1), ACCRollF(:,ShankL));  ylabel('Shank L')
 % % title('Roll'); legend('Raw','Filtered')
-% % subplot(3,1,3); plot(Acc(:,1), Roll(:,ShankR), AccF(:,1), RollF(:,ShankR)); ylabel('Shank R')
-% % ylim([-2 2]);
+% % subplot(3,1,3); plot(ACC(:,1), ACCRoll(:,ShankR), ACCF(:,1), ACCRollF(:,ShankR)); ylabel('Shank R')
+% % ylim([min(ACCRoll(:,ShankL))-1, max(ACCRoll(:,ShankL))+1]);
 % % PlotInstants( instant, File )
 % % %--
 % % figure;
 % % subplot(3,1,1)
 % % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% % subplot(3,1,2); plot(Acc(:,1), Yaw(:,ShankL), Acc(:,1), YawF(:,ShankL));
-% % ylabel('Shank L'); ylim([-2 2]);
+% % subplot(3,1,2); plot(ACC(:,1), ACCYaw(:,ShankL), ACC(:,1), ACCYawF(:,ShankL)); ylabel('Shank L');
 % % title('Yaw'); legend('Raw','Filtered')
-% % subplot(3,1,3); plot(Acc(:,1), Yaw(:,ShankR), AccF(:,1), YawF(:,ShankR));
-% % ylabel('Shank R');ylim([-2 2]);
+% % subplot(3,1,3); plot(ACC(:,1), ACCYaw(:,ShankR), ACCF(:,1), ACCYawF(:,ShankR));ylabel('Shank R');
+% % ylim([min(ACCYaw(:,ShankL))-1, max(ACCYaw(:,ShankL))+1]);
 % % PlotInstants( instant, File )
-% %
-% % %--
-% % X = Acc; XF = AccF;
-% % X(:,2:end) = Acc(:,2:end).^2 - Acc(:,2:end);
-% % XF(:,2:end) = AccF(:,2:end).^2 - AccF(:,2:end);
+
+%% --
+% % X = ACC; XF = ACCF;
+% % X(:,2:end) = ACC(:,2:end).^2 - ACC(:,2:end);
+% % XF(:,2:end) = ACCF(:,2:end).^2 - ACCF(:,2:end);
 % %
 % % figure;
 % % subplot(3,1,1)
 % % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% % subplot(3,1,2); plot(Acc(:,1), X(:,ShankL), Acc(:,1), XF(:,ShankL));
+% % subplot(3,1,2); plot(ACC(:,1), X(:,ShankL), ACC(:,1), XF(:,ShankL));
 % % ylabel('Shank L');
 % % title('Yaw'); legend('Raw','Filtered')
-% % subplot(3,1,3); plot(Acc(:,1), X(:,ShankR), Acc(:,1), XF(:,ShankR));
+% % subplot(3,1,3); plot(ACC(:,1), X(:,ShankR), ACC(:,1), XF(:,ShankR));
 % % ylabel('Shank R');ylim([-1 10]);
 % % PlotInstants( instant, File )

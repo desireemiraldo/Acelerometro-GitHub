@@ -12,7 +12,7 @@ clear all; clc; close all
 
 %% -- Load data
 
-Path = 'C:\Users\BMClab\Downloads\Desiree\Acelerometro\Acelerometro-GitHub\Coletas\';
+Path = '.\Coletas\';
 
 %Delsys data
 
