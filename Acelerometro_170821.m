@@ -140,56 +140,56 @@ for k = 1: length(Var)
             end
             for i = 1 : length(Sensors)
                 cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
-                figure(j+(i-1)*length(Trial));
-                subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
-                title([Name,Trial{j},' (',Sensors{i},')']);
+                %                 figure(j+(i-1)*length(Trial));
+                %                 subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
+                %                 title([Name,Trial{j},' (',Sensors{i},')']);
             end
         end
         beta = ols(p,y); % Coefs for linear combination
         betaM = mean(beta(:,1:length(Trial)),2);
         
         % --- Applying Linear Combination
-        TP = 0; FP = 0; 
+        TP = 0; FP = 0;
         for j = 1 : length(Trial)
             for i = 1 : length(Sensors)
                 LinearCombination(:,j+(i-1)*length(Trial)) = p(:,:,j+(i-1)*length(Trial))*betaM;
                 
                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
                 ToeOffInd(i) = (floor(ToeOff(i)*Fs)-first(i))/(last(i)-first(i));
-                figure(j+(i-1)*length(Trial))
-                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
-                ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
-                
+                %                 figure(j+(i-1)*length(Trial))
+                %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
+                %
                 % --- Checking the combination's quality
                 
                 threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
                 [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
                 
-                Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-                set(Line,'Clipping','off')
+                %                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+                %                 set(Line,'Clipping','off')
                 
                 for w = 1: length (locs)
                     if locs(w)<= ToeOffInd(i) && locs(w)>= ToeOffInd(i)-.1
                         TP = TP+1;
                     end
-                    if locs(w)< ToeOffInd(i)-.1  
+                    if locs(w)< ToeOffInd(i)-.1
                         FP = FP+1;
                     end
                     if locs(w)> ToeOffInd(i)
-                       FP = FP+1;
-                    end    
+                        FP = FP+1;
+                    end
                 end
             end
+            FN = length(Sensors)*length(Trial)- TP;
+            TN = 2*length(Sensors)*length(Trial)- FP;
+                        
+            % --- save
+            structSave(n) = struct('Trial',{File},'k',{k},'Features',{Features},...
+                'TP',{TP},'FN',{FN},'TN',{TN},'FP',{FP},'beta',{beta});
+            % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
+            
+            keyboard %breakpoint
         end
-        FN = length(Sensors)*length(Trial)- TP;
-        TN = 2*length(Sensors)*length(Trial)- FP;
-        %keyboard %breakpoint
-        
-        % --- save
-        structSave(n) = struct('Trial',{File},'k',{k},'Features',{Features},...
-            'TP',{TP},'FN',{FN},'TN',{TN},'FP',{FP},'beta',{beta});
-        % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
-        
     end
 end
 
@@ -199,7 +199,7 @@ save('ResultadosEGS.mat','structSave')
 % % figure;
 % % subplot(3,1,1); plot(Fy(:,1), Fy(:,2:end));
 % % legend({'1','2','3','4','5','6','7'})
-% % 
+% %
 % % %Delsys
 % % subplot(3,1,2); plot(ACC(:,1), ACC(:,ShankL),ACCF(:,1), ACCF(:,ShankL)); ylabel('Shank L')
 % % title('Resultant'); legend('Raw','Filtered')
@@ -210,12 +210,12 @@ save('ResultadosEGS.mat','structSave')
 % % %subplot(3,1,3); plot(ACC2(:,1),ACC2(:,ShankL)); ylabel('Shank R')
 % % ylim([-2 2]);
 % % PlotInstants( instant, File )
-% % 
+% %
 % % %--
 % % figure;
 % % subplot(3,1,1)
 % % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% % 
+% %
 % % subplot(3,1,2); plot(ACC(:,1), ACCPitch(:,ShankL),ACC(:,1), ACCPitchF(:,ShankL)); ylabel('Shank L')
 % % title('Pitch'); legend('Raw','Filtered')
 % % subplot(3,1,3); plot(ACC(:,1), ACCPitch(:,ShankR),ACCF(:,1), ACCPitchF(:,ShankR)); ylabel('Shank R')
