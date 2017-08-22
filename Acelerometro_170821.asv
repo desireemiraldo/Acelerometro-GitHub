@@ -137,12 +137,12 @@ for k = 1: length(Var)
                 % lastFP(i) =  HeelContactInd(i,2);
                 lastFP(i) =  HeelContactInd(i,1)+ceil(FsFP);
             end
-%             for i = 1 : length(Sensors)
-%                 cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
-%                 figure(j+(i-1)*length(Trial));
-%                 subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
-%                 title([Name,Trial{j},' (',Sensors{i},')']);
-%             end
+            for i = 1 : length(Sensors)
+                cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
+                figure(j+(i-1)*length(Trial));
+                subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
+                title([Name,Trial{j},' (',Sensors{i},')']);
+            end
         end
         beta = ols(p,y); % Coefs for linear combination
         betaM = mean(beta(:,1:length(Trial)),2);
@@ -160,9 +160,9 @@ for k = 1: length(Var)
                                 
                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
                 ToeOffInd(i) = (floor(ToeOff(i)*Fs)-first(i))/(last(i)-first(i));
-%                 figure(j+(i-1)*length(Trial))
-%                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
-%                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
+                figure(j+(i-1)*length(Trial))
+                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
                 
                 % --- Checking the combination's quality
                 n = n+1;
@@ -170,8 +170,8 @@ for k = 1: length(Var)
                 threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
                 [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
                 
-%                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-%                 set(Line,'Clipping','off')
+                Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+                set(Line,'Clipping','off')
                 
                 % for w = 1: length (locs)
                 %     if locs(w)<= ToeOffInd(i) && locs(w)>= ToeOffInd(i)-.1
@@ -188,23 +188,22 @@ for k = 1: length(Var)
                 % FN = length(locs)- TP;
                 % TN = 2*length(locs)- (FP+TP);
                 
-                A = rangesearch(locs,ToeOffInd(i)-0.05,0.05);                
-                if isempty(A{1})
-                    FN = FN+1;
+                if isempty(rangesearch(locs,ToeOffInd(i)-0.05,0.05))
+                    FN = FN+1
                 else
-                    TP = TP+1;
+                    TP = TP+1
                 end
-                A = rangesearch(locs,(ToeOffInd(i)-0.1)/2,(ToeOffInd(i)-0.1)/2);
-                if isempty(A{1})
-                    TN = TN+1;
+                
+                if isempty(rangesearch(locs,(ToeOffInd(i)-0.1)/2,(ToeOffInd(i)-0.1)/2))
+                    TN = TN+1
                 else
-                    FP = FP+1;
+                    FP = FP+1
                 end
-                A = rangesearch(locs,(1+ToeOffInd(i))/2,(1-ToeOffInd(i))/2);
-                if isempty(A{1})
-                    TN = TN+1;
+                
+                if isempty(rangesearch(locs,(1+ToeOffInd(i))/2,(1-ToeOffInd(i))/2))
+                    TN = TN+1
                 else
-                    FP = FP+1;
+                    FP = FP+1
                 end
                 % end
                 % end
@@ -215,7 +214,7 @@ for k = 1: length(Var)
                     'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
                 % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
                 
-                % keyboard %breakpoint
+                keyboard %breakpoint
             end
         end
     end

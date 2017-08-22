@@ -12,8 +12,18 @@ for i=1:2:length(instant.textdata)
                
                ToeOff(1,k) = instant.data(i,j+1);
                ToeOff(2,k) = instant.data(i+1,j+1);
+               
+               k=k+1;
+           else
+               HeelContact(1,k) = 0;
+               HeelContact(2,k) = 0;
+               
+               ToeOff(1,k) = 0;
+               ToeOff(2,k) = 0;
+               
                k=k+1;
            end
+           
        end
    end
 end
