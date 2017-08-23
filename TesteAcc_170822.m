@@ -229,7 +229,7 @@ for k = 1: length(Var)
 end
     
     save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
-    save(['ResultCombinatorics',Name,'.mat'],'ResultsTrials')
+    save(['ResultCombinatorics',Name,'.mat'],'ResultsCombinatorics')
     toc
 % end
 %% -- Plots
