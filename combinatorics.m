@@ -1,6 +1,6 @@
 function [ResultsTrials,ResultsCombinatorics] = combinatorics(Var,Name,Trial,Sensors,ToeOffInd,Fs,p,y)
 
-n = 0;
+n = 0; numTrials = length(Trial)*length(Sensors);
 for k = 1: length(Var)
     % -- Combinatorial analysis to find the best set of variables
     % to be used in linear combination
@@ -9,7 +9,7 @@ for k = 1: length(Var)
     for kk = 1 : size (CombinatoricsInd,1)
         TPos = 0; TNeg = 0; FPos = 0; FNeg = 0;
         
-        Features = CombinatoricsInd(kk,:);        
+        Features = CombinatoricsInd(kk,:);
         pp = p(:,Features,:);
         
         beta = ols(pp,y); % Coefs for linear combination
@@ -18,7 +18,7 @@ for k = 1: length(Var)
         % --- Applying Linear Combination
         
         for j = 1 : length(Trial)
-            File = [Name,Trial{j}];         
+            File = [Name,Trial{j}];
             
             for i = 1 : length(Sensors)
                 TP = 0; FP = 0; TN = 0; FN = 0;
@@ -26,17 +26,17 @@ for k = 1: length(Var)
                 
                 LinearCombination(:,j+(i-1)*length(Trial)) = pp(:,:,j+(i-1)*length(Trial))*betaM;
                 
-%                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
-%                 figure(j+(i-1)*length(Trial))
-%                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
-%                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
+                %                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
+                %                 figure(j+(i-1)*length(Trial))
+                %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
                 
-                % --- Checking the combination's quality              
+                % --- Checking the combination's quality
                 threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
                 [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
                 
-%                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-%                 set(Line,'Clipping','off')
+                %                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+                %                 set(Line,'Clipping','off')
                 
                 
                 A = rangesearch(locs,ToeOffInd(i,j+(i-1)*length(Trial))-0.05,0.05);
@@ -55,23 +55,23 @@ for k = 1: length(Var)
                 
                 %---
                 TPos = TPos + TP;
-                TNeg = TNeg + TN; 
-                FPos = FPos + FP; 
+                TNeg = TNeg + TN;
+                FPos = FPos + FP;
                 FNeg = FNeg + FN;
-              
+                
                 
                 % --- save
                 ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
-                    'k',{k},'Features',{Var{Features}},'Locs',{locs},'TP',{TP},...
+                    'k',{k},'Features',{Var(Features)},'Locs',{locs},'TP',{TP},...
                     'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
                 % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
                 
                 % keyboard %breakpoint
-            end 
+            end
         end
-        ResultsCombinatorics(n) = struct('Trials',{Name},'k',{k},'Features',...
-            {Var{Features}},'Locs',{locs},'TP',{TPos},'FP',{FPos},'TN',{TNeg},...
-            'FN',{FNeg},'beta',{beta});
+        ResultsCombinatorics(n/numTrials) = struct('Trials',{Name},...
+            'k',{k},'Features',{Var(Features)},'TP',{TPos},...
+            'FP',{FPos},'TN',{TNeg},'FN',{FNeg},'beta',{beta});
     end
 end
 

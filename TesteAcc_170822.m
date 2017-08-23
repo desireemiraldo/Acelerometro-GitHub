@@ -14,15 +14,15 @@ Path = '.\Coletas\';
 % shanksL = [2,5,5];
 % shanksR = [3,4,4];
 
-Name = 'Acc_170803_EGS_';
+% Name = 'Acc_170803_EGS_';
+% csv = '-Delsys 1.csv';
+% Trial = {'1' '2' '3' '4' '5'};
+% ShankL = 2;ShankR = 3;
+
+Name = 'Acc_170731_RNW_';
 csv = '-Delsys 1.csv';
 Trial = {'1' '2' '3' '4' '5'};
-ShankL = 2;ShankR = 3;
-
-% Name = 'Acc_170731_RNW_';
-% csv = '-Delsys 1.csv';
-% Trial = {'1' '2' '4' '5'};
-% ShankL = 5;ShankR = 4;
+ShankL = 5;ShankR = 4;
 
 % Name = 'Acc_170731_DCM_';
 % csv = '-Delsys 1.csv';
@@ -56,104 +56,104 @@ sd = 50e-3;
 %% Load Data
 
 % for Sub = 1: length(names)
-%     
+%
 %     Name = names {Sub};
 %     csv = ext{Sub};
 %     Trial = eval(['trials.S',num2str(Sub)]);
 %     ShankL = shanksL(Sub); ShankR = shanksR(Sub);
-    
-    % -- Initializing variables for linear combination
-    p = zeros(ceil(Fs),length(Var),length(Sensors)*length(Trial));
-    y = zeros(ceil(Fs),2*length(Trial));
-    
-    tic
-    for j = 1: length(Trial)
-        
-        File = [Name,Trial{j}];
-        FilePath = [Path,File];
-        
-        for i = 1:length(Signal)
-            VarName = strrep(strrep(Signal{i},'IM ',''),' ','');
-            eval([VarName '= ReadDelsys([FilePath,csv], ChannelType, Signal(i));']);
-            temp = eval(VarName);
-            %Filtering
-            eval([VarName 'F = [temp(:,1),filtfilt(b,a,temp(:,2:end))];']);
-        end
-        
-        EMG = ReadDelsys([FilePath,csv], 'IMEMG', 'EMG');
-        
-        Cte = ones(size(eval(VarName),1),size(eval(VarName),2));
-        
-        % Cortex data
-        Forces = importdata([FilePath,'.forces']);
-        Fy = (Forces.data(:,1) -1)/FsFP;
-        for i =1 : length(Forces.colheaders)
-            if strcmp(Forces.colheaders{i}(1:2), 'FY')
-                Fy = [Fy, Forces.data(:,i)];
-            end
-        end
-        
-        Fy(:,6:8) = Fy(:,6:8)/10;
-        
-        
-        %% -- Resultants
-        
-        % Delsys
-        ACC = [ACCPitch(:,1), sqrt(ACCPitch(:,2:end).^2 + ACCRoll(:,2:end).^2 + ACCYaw(:,2:end).^2)];
-        ACCF = [ACCPitch(:,1), sqrt(ACCPitchF(:,2:end).^2 + ACCRollF(:,2:end).^2 + ACCYawF(:,2:end).^2)];
-        
-        GYR = [GYRPitch(:,1), sqrt(GYRPitch(:,2:end).^2 + GYRRoll(:,2:end).^2 + GYRYaw(:,2:end).^2)];
-        GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
-        
-        %% Linear combination of different variables apllied in one gait cycle
-        %
-        instant = importdata('Instantes_gait.txt',',');
-        [HeelContact, ToeOff] = Instants(instant,File);
-        HeelContactInd = floor(HeelContact*Fs);
-        
-        % --- Building inputs for Orthogonal Least Squares Algorithm
-        % --- (ols.m) implemented by Renato Naville Watanabe
-        for i = 1 : length(Sensors)
-            first(i) = HeelContactInd(i,1);
-            last(i) =  HeelContactInd(i,1)+floor(Fs);
-           
-            
-            if first(i)==0 || last(i)==0
-               
-                
-            else
-                ToeOffInd(i,j+(i-1)*length(Trial)) = (floor(ToeOff(i)*Fs)-first(i))/(last(i)-first(i));
-                for jj = 1 : length (Var)
-                    p(:,jj,j+(i-1)*length(Trial)) = eval([Var{jj},'(first(i):last(i),eval(Sensors{i}))']);
-                    
-                    stimulWin = exp(-0.5*((ACC(:,1)-(ToeOff(i,1)- sd))/(sd/3)).^2);
-                    
-                    y(:,j+(i-1)*length(Trial)) = stimulWin(first(i):last(i));
-                    
-                end
-            end
-        end
-%% Plot Fy
 
-%         firstFP = zeros(length(Sensors),1);
-%         lastFP = zeros(length(Sensors),1);
-%         HeelContactInd = ceil(HeelContact*FsFP);
-%         
-%         for i = 1: length(Sensors)
-%             firstFP(i) = HeelContactInd(i,1);
-%             % lastFP(i) =  HeelContactInd(i,2);
-%             lastFP(i) =  HeelContactInd(i,1)+ceil(FsFP);
-%         end
-%         for i = 1 : length(Sensors)
-%             cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
-%             figure(j+(i-1)*length(Trial));
-%             subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
-%             title([Name,Trial{j},' (',Sensors{i},')']);
-%         end
+% -- Initializing variables for linear combination
+p = zeros(ceil(Fs),length(Var),length(Sensors)*length(Trial));
+y = zeros(ceil(Fs),2*length(Trial));
+
+tic
+for j = 1: length(Trial)
+    
+    File = [Name,Trial{j}];
+    FilePath = [Path,File];
+    
+    for i = 1:length(Signal)
+        VarName = strrep(strrep(Signal{i},'IM ',''),' ','');
+        eval([VarName '= ReadDelsys([FilePath,csv], ChannelType, Signal(i));']);
+        temp = eval(VarName);
+        %Filtering
+        eval([VarName 'F = [temp(:,1),filtfilt(b,a,temp(:,2:end))];']);
     end
-
     
-    n = 0;
+    EMG = ReadDelsys([FilePath,csv], 'IMEMG', 'EMG');
+    
+    Cte = ones(size(eval(VarName),1),size(eval(VarName),2));
+    
+    % Cortex data
+    Forces = importdata([FilePath,'.forces']);
+    Fy = (Forces.data(:,1) -1)/FsFP;
+    for i =1 : length(Forces.colheaders)
+        if strcmp(Forces.colheaders{i}(1:2), 'FY')
+            Fy = [Fy, Forces.data(:,i)];
+        end
+    end
+    
+    Fy(:,6:8) = Fy(:,6:8)/10;
+    
+    
+    %% -- Resultants
+    
+    % Delsys
+    ACC = [ACCPitch(:,1), sqrt(ACCPitch(:,2:end).^2 + ACCRoll(:,2:end).^2 + ACCYaw(:,2:end).^2)];
+    ACCF = [ACCPitch(:,1), sqrt(ACCPitchF(:,2:end).^2 + ACCRollF(:,2:end).^2 + ACCYawF(:,2:end).^2)];
+    
+    GYR = [GYRPitch(:,1), sqrt(GYRPitch(:,2:end).^2 + GYRRoll(:,2:end).^2 + GYRYaw(:,2:end).^2)];
+    GYRF = [GYRPitch(:,1), sqrt(GYRPitchF(:,2:end).^2 + GYRRollF(:,2:end).^2 + GYRYawF(:,2:end).^2)];
+    
+    %% Linear combination of different variables apllied in one gait cycle
+    %
+    instant = importdata('Instantes_gait.txt',',');
+    [HeelContact, ToeOff] = Instants(instant,File);
+    HeelContactInd = floor(HeelContact*Fs);
+    
+    % --- Building inputs for Orthogonal Least Squares Algorithm
+    % --- (ols.m) implemented by Renato Naville Watanabe
+    for i = 1 : length(Sensors)
+        first(i) = HeelContactInd(i,1);
+        last(i) =  HeelContactInd(i,1)+floor(Fs);
+        
+        
+        if first(i)==0 || last(i)==0
+            
+            
+        else
+            ToeOffInd(i,j) = (floor(ToeOff(i,1)*Fs)-first(i))/(last(i)-first(i));
+            for jj = 1 : length (Var)
+                p(:,jj,j+(i-1)*length(Trial)) = eval([Var{jj},'(first(i):last(i),eval(Sensors{i}))']);
+                
+                stimulWin = exp(-0.5*((ACC(:,1)-(ToeOff(i,1)- sd))/(sd/3)).^2);
+                
+                y(:,j+(i-1)*length(Trial)) = stimulWin(first(i):last(i));
+                
+            end
+        end
+    end
+    %% Plot Fy
+    
+    %         firstFP = zeros(length(Sensors),1);
+    %         lastFP = zeros(length(Sensors),1);
+    %         HeelContactInd = ceil(HeelContact*FsFP);
+    %
+    %         for i = 1: length(Sensors)
+    %             firstFP(i) = HeelContactInd(i,1);
+    %             % lastFP(i) =  HeelContactInd(i,2);
+    %             lastFP(i) =  HeelContactInd(i,1)+ceil(FsFP);
+    %         end
+    %         for i = 1 : length(Sensors)
+    %             cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
+    %             figure(j+(i-1)*length(Trial));
+    %             subplot(2,1,1); plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
+    %             title([Name,Trial{j},' (',Sensors{i},')']);
+    %         end
+end
+
+
+n = 0; numTrials = length(Trial)*length(Sensors);
 for k = 1: length(Var)
     % -- Combinatorial analysis to find the best set of variables
     % to be used in linear combination
@@ -162,7 +162,7 @@ for k = 1: length(Var)
     for kk = 1 : size (CombinatoricsInd,1)
         TPos = 0; TNeg = 0; FPos = 0; FNeg = 0;
         
-        Features = CombinatoricsInd(kk,:);        
+        Features = CombinatoricsInd(kk,:);
         pp = p(:,Features,:);
         
         beta = ols(pp,y); % Coefs for linear combination
@@ -171,66 +171,73 @@ for k = 1: length(Var)
         % --- Applying Linear Combination
         
         for j = 1 : length(Trial)
-            File = [Name,Trial{j}];         
+            File = [Name,Trial{j}];
             
             for i = 1 : length(Sensors)
-                TP = 0; FP = 0; TN = 0; FN = 0;
-                n = n+1; disp(n)
+                ind = ToeOffInd(i,j);
                 
-                LinearCombination(:,j+(i-1)*length(Trial)) = pp(:,:,j+(i-1)*length(Trial))*betaM;
-                
-%                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
-%                 figure(j+(i-1)*length(Trial))
-%                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
-%                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
-                
-                % --- Checking the combination's quality              
-                threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
-                [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
-                
-%                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-%                 set(Line,'Clipping','off')
-                
-                
-                A = rangesearch(locs,ToeOffInd(i,j+(i-1)*length(Trial))-0.05,0.05);
-                if isempty(A{1})
-                    FN = FN+1;
+                if ind == 0
+                    
                 else
-                    TP = TP+1;
+                    TP = 0; FP = 0; TN = 0; FN = 0;
+                    n = n+1; disp(n)
+                    
+                    
+                    LinearCombination(:,j+(i-1)*length(Trial)) = pp(:,:,j+(i-1)*length(Trial))*betaM;
+                    
+                    %                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
+                    %                 figure(j+(i-1)*length(Trial))
+                    %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                    %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
+                    
+                    % --- Checking the combination's quality
+                    threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
+                    [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
+                    
+                    %                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+                    %                 set(Line,'Clipping','off')
+                    
+                    
+                    A = rangesearch(locs,ind-0.05,0.05);
+                    if isempty(A{1})
+                        FN = FN+1;
+                    else
+                        TP = TP+1;
+                    end
+                    A = rangesearch(locs,(ind-0.1)/2,(ind-0.1)/2);
+                    B = rangesearch(locs,(1+ind)/2,(1-ind)/2);
+                    if isempty(A{1}) || isempty(B{1})
+                        TN = TN+1;
+                    else
+                        FP = FP+1;
+                    end
+                    
+                    %---
+                    TPos = TPos + TP;
+                    TNeg = TNeg + TN;
+                    FPos = FPos + FP;
+                    FNeg = FNeg + FN;
+                    
+                    
+                    % --- save
+                    ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
+                        'k',{k},'Features',{Var(Features)},'Locs',{locs},'TP',{TP},...
+                        'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
+                    % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
+                    
+                    % keyboard %breakpoint
                 end
-                A = rangesearch(locs,(ToeOffInd(i,j+(i-1)*length(Trial))-0.1)/2,(ToeOffInd(i,j+(i-1)*length(Trial))-0.1)/2);
-                B = rangesearch(locs,(1+ToeOffInd(i,j+(i-1)*length(Trial)))/2,(1-ToeOffInd(i,j+(i-1)*length(Trial)))/2);
-                if isempty(A{1}) || isempty(B{1})
-                    TN = TN+1;
-                else
-                    FP = FP+1;
-                end
-                
-                %---
-                TPos = TPos + TP;
-                TNeg = TNeg + TN; 
-                FPos = FPos + FP; 
-                FNeg = FNeg + FN;
-              
-                
-                % --- save
-                ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
-                    'k',{k},'Features',{Var{Features}},'Locs',{locs},'TP',{TP},...
-                    'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
-                % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
-                
-                % keyboard %breakpoint
-            end 
+            end
         end
-        ResultsCombinatorics(n) = struct('Trials',{Name},'k',{k},'Features',...
-            {Var{Features}},'Locs',{locs},'TP',{TPos},'FP',{FPos},'TN',{TNeg},...
-            'FN',{FNeg},'beta',{beta});
+        ResultsCombinatorics(n/numTrials) = struct('Trials',{Name},...
+            'k',{k},'Features',{Var(Features)},'TP',{TPos},...
+            'FP',{FPos},'TN',{TNeg},'FN',{FNeg},'beta',{beta});
     end
 end
-    
-    save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
-    save(['ResultCombinatorics',Name,'.mat'],'ResultsCombinatorics')
-    toc
+
+save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
+save(['ResultCombinatorics_',Name,'.mat'],'ResultsCombinatorics')
+toc
 % end
 %% -- Plots
 
