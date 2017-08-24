@@ -7,22 +7,22 @@ Path = '.\Coletas\';
 
 % -- Settings
 
-% names = {'Acc_170803_EGS_','Acc_170731_RNW_','Acc_170731_DCM_'};
-% ext = {'-Delsys 1.csv','-Delsys 1.csv','-Delsys 1.csv'};
-% trials = struct('S1',{{'1' '2' '3' '4' '5'}},'S2',{{'1' '2' '4' '5'}},...
-%     'S3',{{'1' '2' '3' '4'}});
-% shanksL = [2,5,5];
-% shanksR = [3,4,4];
+names = {'Acc_170803_EGS_','Acc_170731_RNW_','Acc_170731_DCM_'};
+ext = {'-Delsys 1.csv','-Delsys 1.csv','-Delsys 1.csv'};
+trials = struct('S1',{{'1' '2' '3' '4' '5'}},'S2',{{'1' '2' '4' '5'}},...
+    'S3',{{'1' '2' '3' '4'}});
+shanksL = [2,5,5];
+shanksR = [3,4,4];
 
 % Name = 'Acc_170803_EGS_';
 % csv = '-Delsys 1.csv';
 % Trial = {'1' '2' '3' '4' '5'};
 % ShankL = 2;ShankR = 3;
 
-Name = 'Acc_170731_RNW_';
-csv = '-Delsys 1.csv';
-Trial = {'1' '2' '3' '4' '5'};
-ShankL = 5;ShankR = 4;
+% Name = 'Acc_170731_RNW_';
+% csv = '-Delsys 1.csv';
+% Trial = {'1' '2' '3' '4' '5'};
+% ShankL = 5;ShankR = 4;
 
 % Name = 'Acc_170731_DCM_';
 % csv = '-Delsys 1.csv';
@@ -53,14 +53,14 @@ Sensors = {'ShankR','ShankL'};
 sd = 50e-3;
 
 
-%% Load Data
+%% Loading Data
 
-% for Sub = 1: length(names)
-%
-%     Name = names {Sub};
-%     csv = ext{Sub};
-%     Trial = eval(['trials.S',num2str(Sub)]);
-%     ShankL = shanksL(Sub); ShankR = shanksR(Sub);
+for Sub = 1: length(names)
+
+    Name = names {Sub};
+    csv = ext{Sub};
+    Trial = eval(['trials.S',num2str(Sub)]);
+    ShankL = shanksL(Sub); ShankR = shanksR(Sub);
 
 % -- Initializing variables for linear combination
 p = NaN(ceil(Fs),length(Var),length(Sensors)*length(Trial));
@@ -151,126 +151,22 @@ for j = 1: length(Trial)
 %         subplot(2,1,1); 
 %         plot(cycle1, Fy(firstFP(i):lastFP(i),2:end)); 
 %         title([Name,Trial{j},' (',Sensors{i},')']);
-         %% --
-% %         figure(j);
-% %         %plot(Fy); %ylim([min(Fy)-1 max(Fy)+1]);
-% %         
-% %         plot(Fy(:,1), Fy(:,2:end)); ylim([0 1000]);
-% %         legend({'1','2','3','4','5','6','7'})
-% %         PlotInstants( instant, File )
-% %         title([Name,Trial{j},' (',Sensors{i},')']);
-% 
+%
 %     end
 end
 
-PPP = p;
-YYY = y;
-while sum(isnan(y(1,:)))^
-= 0
-    for i = 1:size(y,2)-sum(isnan(y(1,:)))
-        if isnan(y(1,i))
-            y(:,i)=[];
-            p(:,:,i) = [];
-            i = i-1;
-        end
-    end
-end
 
-i = 1;
-if isnan(y(1,i))
-    y(:,i)=[];
-    p(:,:,i) = [];
-    i = i-1;
-end
-%% ---
+%% --- Combinatorial Analysis
  
-n = 0; numTrials = length(Trial)*length(Sensors);
-for k = 1: length(Var)
-    % -- Combinatorial analysis to find the best set of variables
-    % to be used in linear combination
-    CombinatoricsInd = nchoosek(1:1:length(Var),k);
-    
-    for kk = 1 : size (CombinatoricsInd,1)
-        TPos = 0; TNeg = 0; FPos = 0; FNeg = 0;
-        numTrials = length(Trial)*length(Sensors);
-        
-        Features = CombinatoricsInd(kk,:);
-        pp = p(:,Features,:);
-        
-        beta = ols(pp,y); % Coefs for linear combination
-        betaM = mean(beta(:,1:length(Trial)),2);
-        
-        % --- Applying Linear Combination
-        
-        for j = 1 : length(Trial)
-            File = [Name,Trial{j}];
-            
-            for i = 1 : length(Sensors)
-                ind = ToeOffInd(i,j);
-                
-                if ind == 0
-                    numTrials = numTrials -1;
-                else
-                    TP = 0; FP = 0; TN = 0; FN = 0;
-                    n = n+1; disp(n)
-                    
-                    
-                    LinearCombination(:,j+(i-1)*length(Trial)) = pp(:,:,j+(i-1)*length(Trial))*betaM;
-                    
-                    %                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
-                    %                 figure(j+(i-1)*length(Trial))
-                    %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
-                    %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
-                    
-                    % --- Checking the combination's quality
-                    threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
-                    [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
-                    
-                    %                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-                    %                 set(Line,'Clipping','off')
-                    
-                    
-                    A = rangesearch(locs,ind-0.05,0.05);
-                    if isempty(A{1})
-                        FN = FN+1;
-                    else
-                        TP = TP+1;
-                    end
-                    A = rangesearch(locs,(ind-0.1)/2,(ind-0.1)/2);
-                    B = rangesearch(locs,(1+ind)/2,(1-ind)/2);
-                    if isempty(A{1}) || isempty(B{1})
-                        TN = TN+1;
-                    else
-                        FP = FP+1;
-                    end
-                    
-                    %---
-                    TPos = TPos + TP;
-                    TNeg = TNeg + TN;
-                    FPos = FPos + FP;
-                    FNeg = FNeg + FN;
-                    
-                    
-                    % --- save
-                    ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
-                        'k',{k},'Features',{Var(Features)},'Locs',{locs},'TP',{TP},...
-                        'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
-                    % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
-                    
-                    % keyboard %breakpoint
-                end
-            end
-        end
-        ResultsCombinatorics(n/numTrials) = struct('Trials',{Name},...
-            'k',{k},'Features',{Var(Features)},'TP',{TPos},...
-            'FP',{FPos},'TN',{TNeg},'FN',{FNeg},'beta',{beta});
-    end
+[ResultsTrials,ResultsCombinatorics] = combinatorics(Var,Name,Trial,Sensors,ToeOffInd,Fs,p,y);
+
+save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
+save(['ResultCombinatorics_',Name,'.mat'],'ResultsCombinatorics')
+
+toc
 end
 
-% save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
-% save(['ResultCombinatorics_',Name,'.mat'],'ResultsCombinatorics')
-toc
-% end
+
 %% -- Plots
 
 % % figure;
@@ -317,17 +213,3 @@ toc
 % % ylim([min(ACCYaw(:,ShankL))-1, max(ACCYaw(:,ShankL))+1]);
 % % PlotInstants( instant, File )
 
-%% --
-% % X = ACC; XF = ACCF;
-% % X(:,2:end) = ACC(:,2:end).^2 - ACC(:,2:end);
-% % XF(:,2:end) = ACCF(:,2:end).^2 - ACCF(:,2:end);
-% %
-% % figure;
-% % subplot(3,1,1)
-% % plot(Fy(:,1), Fy(:,2:end)); legend({'1','2','3','4','5','6','7'})
-% % subplot(3,1,2); plot(ACC(:,1), X(:,ShankL), ACC(:,1), XF(:,ShankL));
-% % ylabel('Shank L');
-% % title('Yaw'); legend('Raw','Filtered')
-% % subplot(3,1,3); plot(ACC(:,1), X(:,ShankR), ACC(:,1), XF(:,ShankR));
-% % ylabel('Shank R');ylim([-1 10]);
-% % PlotInstants( instant, File )

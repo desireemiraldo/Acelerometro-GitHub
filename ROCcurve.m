@@ -12,9 +12,10 @@ for i = 1: length(ResultsStruct)
         (ResultsStruct(i).FP + ResultsStruct(i).TN);
 end
 
-
+figure;
 plot(1-Specif,Sensib,'.','MarkerSize',12)
-line([0 max(1-Specif)], [0 max(Sensib)],'LineStyle','--','color','k')
+xlim([0 1]); ylim = ([0 1]);
+line([0 1], [0 1],'LineStyle','--','color','k')
 xlabel('1-Specif');
 ylabel('Sensib');
 
