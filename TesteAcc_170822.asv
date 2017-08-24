@@ -19,15 +19,15 @@ Path = '.\Coletas\';
 % Trial = {'1' '2' '3' '4' '5'};
 % ShankL = 2;ShankR = 3;
 
-% Name = 'Acc_170731_RNW_';
-% csv = '-Delsys 1.csv';
-% Trial = {'1' '2' '3' '4' '5'};
-% ShankL = 5;ShankR = 4;
-
-Name = 'Acc_170731_DCM_';
+Name = 'Acc_170731_RNW_';
 csv = '-Delsys 1.csv';
-Trial = {'1' '2' '3' '4' };
+Trial = {'1' '2' '3' '4' '5'};
 ShankL = 5;ShankR = 4;
+
+% Name = 'Acc_170731_DCM_';
+% csv = '-Delsys 1.csv';
+% Trial = {'1' '2' '3' '4' };
+% ShankL = 5;ShankR = 4;
 
 %% -- Initializing some variables
 
@@ -163,15 +163,25 @@ for j = 1: length(Trial)
 %     end
 end
 
-% while sum(isnan(y(1,:)))~= 0
-%     for i = 1:size(y,2)-sum(isnan(y(1,:)))
-%         if isnan(y(1,i))
-%             y(:,i)=[];
-%             p(:,:,i) = [];
-%         end
-%     end
-% end
+PPP = p;
+YYY = y;
+while sum(isnan(y(1,:)))^
+= 0
+    for i = 1:size(y,2)-sum(isnan(y(1,:)))
+        if isnan(y(1,i))
+            y(:,i)=[];
+            p(:,:,i) = [];
+            i = i-1;
+        end
+    end
+end
 
+i = 1;
+if isnan(y(1,i))
+    y(:,i)=[];
+    p(:,:,i) = [];
+    i = i-1;
+end
 %% ---
  
 n = 0; numTrials = length(Trial)*length(Sensors);
@@ -188,14 +198,7 @@ for k = 1: length(Var)
         pp = p(:,Features,:);
         
         beta = ols(pp,y); % Coefs for linear combination
-        while sum(isnan(beta(1,:)))~= 0
-            for i = 1:size(beta,2)-sum(isnan(beta(1,:)))
-                if isnan(beta(1,i))
-                    beta(:,i)=[];
-                end
-            end
-        end
-        betaM = mean(beta(:,1:length(beta)/2),2);
+        betaM = mean(beta(:,1:length(Trial)),2);
         
         % --- Applying Linear Combination
         
@@ -264,8 +267,8 @@ for k = 1: length(Var)
     end
 end
 
-save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
-save(['ResultCombinatorics_',Name,'.mat'],'ResultsCombinatorics')
+% save(['ResultTrials_',Name,'.mat'],'ResultsTrials')
+% save(['ResultCombinatorics_',Name,'.mat'],'ResultsCombinatorics')
 toc
 % end
 %% -- Plots
