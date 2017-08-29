@@ -1,4 +1,4 @@
-function [ResultsTrials,ResultsCombinatorics] = combinatorics(Var,Name,Trial,Sensors,ToeOffInd,Fs,p,y)
+function [ResultsTrials,ResultsCombinatorics] = combinatorics(Var,Name,Trial,Sensors,ToeOffInd,Fs,p,y,pct)
 
 n = 0; numTrials = length(Trial)*length(Sensors);
 for k = 1: length(Var)
@@ -46,7 +46,7 @@ for k = 1: length(Var)
                     %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
                     
                     % --- Checking the combination's quality
-                    threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*0.75;
+                    threshold = (max(LinearCombination(:,j+(i-1)*length(Trial))))*pct;
                     [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(Trial)),Fs,'MinPeakHeight',threshold);
                     
                     %                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
@@ -76,8 +76,8 @@ for k = 1: length(Var)
                     
                     % --- save
                     ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
-                        'Features',{Var(Features)},'Locs',{locs},'TP',{TP},...
-                        'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
+                        'Features',{Var(Features)},'Locs',{locs},'Threshold',...
+                        {pct},'TP',{TP},'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
                     % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
                     
                     % keyboard %breakpoint
@@ -85,7 +85,7 @@ for k = 1: length(Var)
             end
         end
         ResultsCombinatorics(n/numTrials) = struct('Trials',{Name},...
-            'Features',{Var(Features)},'TP',{TPos},...
+            'Features',{Var(Features)},'Threshold',{pct},'TP',{TPos},...
             'FP',{FPos},'TN',{TNeg},'FN',{FNeg},'beta',{beta});
     end
 end
