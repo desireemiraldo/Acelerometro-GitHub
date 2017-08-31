@@ -56,7 +56,7 @@ sd = 50e-3;
 
 %% Loading Data
 
-for Sub = 2: length(names)
+for Sub = 1: length(names)
 
     Name = names {Sub};
     csv = ext{Sub};
@@ -128,8 +128,8 @@ for j = 1: length(Trial)
                 p(:,jj,j+(i-1)*length(Trial)) = eval([Var{jj},'(first(i):last(i),eval(Sensors{i}))']);
                 
                 %stimulWin = exp(-0.5*((ACC(:,1)-(ToeOff(i,1)- sd))/(sd/3)).^2);
-                stimulWin1 = zeros(length(ACC),1);
-                stimulWin1(floor((ToeOff(i,1)-2*sd)*Fs): floor(ToeOff(i,1)*Fs)) = 1;
+                stimulWin = zeros(length(ACC),1);
+                stimulWin(floor((ToeOff(i,1)-2*sd)*Fs): floor(ToeOff(i,1)*Fs)) = 1;
                 
                 y(:,j+(i-1)*length(Trial)) = stimulWin(first(i):last(i));
                 
@@ -173,8 +173,8 @@ for pct = 0: 0.01 : 1
     
 end
 
-save(['RT_',Name,'.mat'],'RT')
-save(['RC_',Name,'.mat'],'RC')
+save(['RTsquare_',Name,'.mat'],'RT')
+save(['RCsquare_',Name,'.mat'],'RC')
 RT(:) = []; RC(:) = [];
 
 toc
