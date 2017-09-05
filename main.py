@@ -23,7 +23,7 @@ def main():
                 return
 
             #Save file using dialog
-            if not file_save(choosenLines):
+            if not file_save(Data):
                 return
 
             index = index + 1

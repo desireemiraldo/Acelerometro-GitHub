@@ -3,7 +3,11 @@ function [HeelContact, ToeOff] = Instants(instant,File)
 %   Detailed explanation goes here
 HeelContact = [];
 k=1;
-for i=1:2:length(instant.textdata)
+
+if strcmp(instant.textdata(1,1),'﻿File')
+    instant.textdata = instant.textdata(2:end,:);
+end
+for i=1:2:size(instant.textdata,1)
     if strcmp(instant.textdata(i,1),File)
         for j = 1 :2: size(instant.data,2)
             HeelContact(1,k) = instant.data(i,j);
