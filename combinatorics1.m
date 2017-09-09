@@ -1,4 +1,4 @@
-function [ResultsindTrs,ResultsCombinatorics] = combinatorics(Var,Name,indTr,Sensors,ToeOffInd,Fs,p,y,pct)
+function [ResultsTrials,ResultsCombinatorics] = combinatorics1(Var,Name,indTr,Sensors,ToeOffInd,Fs,p,y,pct)
 
 n = 0; 
 for k = 1: length(Var)
@@ -26,7 +26,7 @@ for k = 1: length(Var)
         % --- Applying Linear Combination
         
         for j = 1 : length(indTr)
-            % File = [Name,indTr{j}];
+            File = [Name,indTr{j}];
             
             for i = 1 : length(Sensors)
                 ind = ToeOffInd(i,j);
@@ -41,9 +41,9 @@ for k = 1: length(Var)
                     LinearCombination(:,j+(i-1)*length(indTr)) = pp(:,:,j+(i-1)*length(indTr))*betaM;
                     
                     %                 cycle = ((first(i):1:last(i))-first(i))/(last(i)-first(i));
-                    %                 figure(j+(i-1)*length(indTr))
-                    %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(indTr)));
-                    %                 ylim([min(LinearCombination(:,j+(i-1)*length(indTr)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTr)))*1.1]);
+                    %                 figure(j+(i-1)*length(Trial))
+                    %                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(Trial)));
+                    %                 ylim([min(LinearCombination(:,j+(i-1)*length(Trial)))*1.1 max(LinearCombination(:,j+(i-1)*length(Trial)))*1.1]);
                     
                     % --- Checking the combination's quality
                     threshold = (max(LinearCombination(:,j+(i-1)*length(indTr))))*pct;
@@ -75,7 +75,7 @@ for k = 1: length(Var)
                     
                     
                     % --- save
-                    ResultsindTrs(n) = struct('indTr',{File},'Sensor',{Sensors(i)},...
+                    ResultsTrials(n) = struct('Trial',{File},'Sensor',{Sensors(i)},...
                         'Features',{Var(Features)},'Locs',{locs},'Threshold',...
                         {pct},'TP',{TP},'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
                     % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});
@@ -84,7 +84,7 @@ for k = 1: length(Var)
                 end
             end
         end
-        ResultsCombinatorics(n/numTrials) = struct('indTrs',{Name},...
+        ResultsCombinatorics(n/numTrials) = struct('Trials',{Name},...
             'Features',{Var(Features)},'Threshold',{pct},'TP',{TPos},...
             'FP',{FPos},'TN',{TNeg},'FN',{FNeg},'beta',{beta});
     end

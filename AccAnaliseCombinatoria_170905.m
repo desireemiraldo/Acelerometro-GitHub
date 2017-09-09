@@ -7,8 +7,8 @@ Path = '.\Dropfoot\';
 
 % -- Settings
 
-names = {'DCM\Descalco25_Dual_170831_'};
-ext = {'-Delsys 1.csv'};
+names = 'DCM\Descalco25_Dual_170831_1';
+csv = '-Delsys 1.csv';
 trials = struct('S1',{{'1'}});
 shanksL = [2];
 shanksR = [1];

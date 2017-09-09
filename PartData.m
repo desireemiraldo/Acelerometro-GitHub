@@ -1,13 +1,13 @@
 function [indTr,indTs] = PartData(instant,Ntest)
 
-N = length(instant.data)/2;
+N = length(instant);
 
 
-[Train, Test] = crossvalind('LeaveMOut', N, Ntest);
+[Trainning, Test] = crossvalind('LeaveMOut', N, Ntest);
 
-[indTr val] = find(Train==1);
+indTr = find(Trainning==1);
 
-[indTs val] = find(Test==1);
+indTs = find(Test==1);
 
 end
 
