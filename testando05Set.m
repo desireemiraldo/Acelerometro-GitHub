@@ -39,7 +39,7 @@ Var = {'ACCF','ACCPitchF','ACCRollF','ACCYawF',...
 sd = 50e-3;
 
 % --
-winPts = 404;
+winPts = 202;
 
 for Sub = 1: length(names)
     for w = 1: length(Win)
@@ -55,14 +55,14 @@ for Sub = 1: length(names)
         
         %% Loading Data
         
-        [Trials,TrLabel] = ReadDelsysWindows([FilePath,csv], winPts);
+        [Trials,deltaT,TrLabel] = ReadDelsysWindows([FilePath,csv], winPts);
         
         instant = importdata('Instantes_gait1.txt',';');
         
-        [instant] = ReshapeInstants(Trials, instant,Name);
+        [instant] = ReshapeInstants(deltaT, instant,Name);
         
         % Select trials for trainning and test
-        [indTr,indTs] = PartData(instant,6);
+        [indTr,indTs] = PartData(instant,16);
         
         
         tic
@@ -145,10 +145,6 @@ for Sub = 1: length(names)
                 end
             end
             
-            for i = 1: length(ToeOffInd)
-                TOcycle(i,:) = (ToeOffInd(i,:)-((i-1)*length(y)+1))/(i*length(y)-((i-1)*length(y)+1));
-                
-            end
             
             %% Plot Fy
             
@@ -181,7 +177,8 @@ for Sub = 1: length(names)
         
         t = 0; c = 0;
         for pct = 0: 0.01 : 1
-            [ResultsTrials,ResultsCombinatorics] = combinatorics(Var,Name,indTr,Sensors,ToeOffInd,Fs,p,y,pct);
+            pct= 0.75; %% APAGAR
+            [ResultsTrials,ResultsCombinatorics] = combinatorics1(Var,Name,indTr,Sensors,ToeOffInd,Fs,p,y,pct);
             
             RT(t+1:t+length(ResultsTrials)) = ResultsTrials;
             RC(c+1:c+length(ResultsCombinatorics)) = ResultsCombinatorics;

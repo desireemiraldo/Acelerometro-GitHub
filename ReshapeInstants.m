@@ -1,4 +1,4 @@
-function [newInstant] = ReshapeInstants(Data, instant,Name)
+function [newInstant] = ReshapeInstants(deltaT, instant,Name)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,14 +7,14 @@ ind = find(A==1)-1; %first row is label
 
 newInstant = NaN;
 
-for k = 1 : size(Data,3)
+for k = 1 : length(deltaT)
     
-    first = str2double(Data(2,4,k));
-    last = str2double(Data(end,4,k));
+    first = deltaT(k,1);
+    last = deltaT(k,2);
     
     i = find(instant.data(ind(1),:)>=first & instant.data(ind(1),:)<=last); %edit when using both legs
     
-    New = instant.data(ind(1),i);
+    New = instant.data(ind(1),i) - deltaT(k,1);
        
     ColNumber = size(newInstant,2);
     
