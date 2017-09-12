@@ -1,6 +1,9 @@
-function [ResultsindTrs,ResultsCombinatorics] = combinatorics(Var,Name,indTr,Sensors,ToeOffInd,Fs,p,y,pct)
+function [ResultsindTrs,ResultsCombinatorics] = combinatorics1(Var,Name,Sensors,ToeOffInd,Fs,p,y,pct, winPts)
 
 ToeOffInd = ToeOffInd./max(ToeOffInd,[],2);
+
+% Select trials for trainning and test
+[indTr,indTs] = PartData(ToeOffInd,16);
 
 n = 0;
 for k = 1: length(Var)
@@ -13,9 +16,10 @@ for k = 1: length(Var)
         numTrials = length(indTr)*length(Sensors);
         
         Features = CombinatoricsInd(kk,:);
-        pp = p(:,Features,:);
+        pp = p(:,Features,indTr);
+        yy = y(:,indTr);
         
-        beta = ols(pp,y); % Coefs for linear combination
+        beta = ols(pp,yy); % Coefs for linear combination
         while sum(isnan(beta(1,:)))~= 0
             for i = 1:size(beta,2)-sum(isnan(beta(1,:)))
                 if isnan(beta(1,i))
@@ -38,17 +42,17 @@ for k = 1: length(Var)
                 
                 LinearCombination(:,j+(i-1)*length(indTr)) = pp(:,:,j+(i-1)*length(indTr))*betaM;
                 
-                cycle = 0:1/403:1;
-                figure(j+(i-1)*length(indTr))
-                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(indTr)));
-                ylim([min(LinearCombination(:,j+(i-1)*length(indTr)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTr)))*1.1]);
+%                 cycle = 0:1/(2*winPts - 1):1;
+%                 figure(j+(i-1)*length(indTr))
+%                 subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(indTr)));
+%                 ylim([min(LinearCombination(:,j+(i-1)*length(indTr)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTr)))*1.1]);
                 
                 % --- Checking the combination's quality
                 threshold = (max(LinearCombination(:,j+(i-1)*length(indTr))))*pct;
                 [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(indTr)),Fs,'MinPeakHeight',threshold);
                 
-                Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-                set(Line,'Clipping','off')
+%                 Line = line([locs locs], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+%                 set(Line,'Clipping','off')
                 
                 for w = 1 : size(ToeOffInd,2)
                     ind = ToeOffInd(indTr(j),w);
