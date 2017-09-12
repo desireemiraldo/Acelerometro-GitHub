@@ -1,18 +1,18 @@
-function [ResultsindTrs,ResultsCombinatorics, indTs] = combinatorics1(Var,Name,Sensors,ToeOffInd,p,y,pct, winPts,Fy,HeelStrike,ToeOff,FsFP)
+function [ResultsindTrs,ResultsCombinatorics, indTr] = combinatorics1_teste(Var,Name,Sensors,ToeOffInd,p,y,pct, winPts,Fy,HeelStrike,ToeOff,FsFP)
 
 % -- Select trials for trainning and test
-[indTr,indTs] = PartData(ToeOffInd,16);
+[indTr,indTr] = PartData(ToeOffInd,16);
 
 % -- For plotting Fy
 HeelStrikeFP = ceil(HeelStrike*FsFP);
 ToeOffFP = ceil(ToeOff*FsFP);
 
-firstFP = min([HeelStrikeFP(indTs,:),ToeOffFP(indTs,:)],[],2);
-lastFP = max([HeelStrikeFP(indTs,:),ToeOffFP(indTs,:)],[],2);
+firstFP = HeelStrikeFP(indTr,1);
+lastFP =  ToeOffInd(indTr,end);
 
 % --
 
-ToeOffInd = ToeOffInd/(winPts*2);
+ToeOffInd = ToeOffInd./max(ToeOffInd,[],2);
 
 
 n = 0;
@@ -23,13 +23,13 @@ for k = 9: length(Var)
     
     for kk = 1 : size (CombinatoricsInd,1)
         TPos = 0; TNeg = 0; FPos = 0; FNeg = 0;
-        numTrials = length(indTs)*length(Sensors);
+        numTrials = length(indTr)*length(Sensors);
         
         Features = CombinatoricsInd(kk,:);
         pTr = p(:,Features,indTr);
         yTr = y(:,indTr);
         
-        pTs = p(:,Features,indTs);
+        pTs = p(:,Features,indTr);
         
         beta = ols(pTr,yTr); % Coefs for linear combination
         while sum(isnan(beta(1,:)))~= 0
@@ -43,16 +43,17 @@ for k = 9: length(Var)
         
         % --- Applying Linear Combination
         
-        for j = 1 : length(indTs)
-            % File = [Name,indTs{j}];
+        for j = 1 : length(indTr)
+            % File = [Name,indTr{j}];
             
             for i = 1 : length(Sensors)
                 
                 TP = 0; FP = 0; TN = 0; FN = 0;
                 n = n+1; disp(n)
                 
+                j+(i-1)*length(indTr) = 1;
                 
-                LinearCombination(:,j+(i-1)*length(indTs)) = pTs(:,:,j+(i-1)*length(indTs))*betaM;
+                LinearCombination(:,j+(i-1)*length(indTr)) = pTs(:,:,j+(i-1)*length(indTr))*betaM;
                 
                 %% Plot Fy
                 
@@ -64,16 +65,15 @@ for k = 9: length(Var)
                 cycle1 = ((firstFP(j):1:lastFP(j))-firstFP(j))/(lastFP(j)-firstFP(j));
                 cycle = 0:1/(2*winPts - 1):1;
                 
-                figure(j+(i-1)*length(indTs))
+                figure(j+(i-1)*length(indTr))
                 subplot(2,1,1); plot(cycle1, Fy(firstFP(j):lastFP(j),2:end));
-                                
                 %title([Name,' Trial ', i]);
-                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(indTs)));
-                ylim([min(LinearCombination(:,j+(i-1)*length(indTs)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTs)))*1.1]);
+                subplot(2,1,2); plot(cycle,LinearCombination(:,j+(i-1)*length(indTr)));
+                ylim([min(LinearCombination(:,j+(i-1)*length(indTr)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTr)))*1.1]);
                 
                 % --- Checking the combination's quality
-                threshold = (max(LinearCombination(:,j+(i-1)*length(indTs))))*pct;
-                [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(indTs)),cycle,'MinPeakHeight',threshold);
+                threshold = (max(LinearCombination(:,j+(i-1)*length(indTr))))*pct;
+                [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(indTr)),cycle,'MinPeakHeight',threshold);
                 
                 %                 x1(1:length(locs))=-1;
                 %                 x2(1:length(locs))=100;
@@ -86,7 +86,7 @@ for k = 9: length(Var)
                     set(Line,'Clipping','off')
                     
                     for w = 1 : size(ToeOffInd,2)
-                        ind = ToeOffInd(indTs(j),w);
+                        ind = ToeOffInd(indTr(j),w);
                         
                         if isnan(ind)
                             
@@ -115,7 +115,7 @@ for k = 9: length(Var)
                     end
                 end
                 % --- save
-                ResultsindTrs(n) = struct('Trial',{indTs(j)},'Sensor',{Sensors(i)},...
+                ResultsindTrs(n) = struct('Trial',{indTr(j)},'Sensor',{Sensors(i)},...
                     'Features',{Var(Features)},'Locs',{locs},'Threshold',...
                     {pct},'TP',{TP},'FP',{FP},'TN',{TN},'FN',{FN},'beta',{beta});
                 % structSave = struct('teste',{File,k,Features,TP,FN,TN,FP,beta});

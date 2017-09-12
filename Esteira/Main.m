@@ -59,7 +59,8 @@ for Sub = 1: length(names)
         
         instant = importdata('Instantes_gait1.txt',';');
         
-        [instant] = ReshapeInstants(deltaT, instant,Name);
+        [NewInstant] = ReshapeInstants(deltaT, instant,Name);
+        [ToeOff, HeelStrike] = ReshapeInstants1(deltaT, instant,Name);
             
         
         tic
@@ -101,7 +102,7 @@ for Sub = 1: length(names)
         
         %% Linear combination of different variables apllied in one trial
         %
-        [HeelStrike, ToeOff] = Instants1(instant);
+        %[HeelStrike, ToeOff] = Instants1(instant);
         HeelStrikeInd = floor(HeelStrike*Fs);
         ToeOffInd = floor(ToeOff*Fs);
         
@@ -115,19 +116,19 @@ for Sub = 1: length(names)
         
         for j = 1 : size(Trials,3)
             for i = 1 : length(Sensors)
-                first(j) = HeelStrikeInd(j,1);
-                last(j) =  ToeOffInd(j,end);
+                first(j) = min([HeelStrike(j,:),ToeOff(j,:)],[],2);
+                last(j) = max([HeelStrike(j,:),ToeOff(j,:)],[],2);
                 
                 ind = 1;
-                while isnan(last(i))
-                    last(j) = ToeOffInd(i,end-1);
-                    ind = ind + 1;
-                end
+%                 while isnan(last(i))
+%                     last(j) = ToeOffInd(i,end-1);
+%                     ind = ind + 1;
+%                 end
                 
                 tempTO = (ToeOff(j,:));
                 tempTO(isnan(tempTO))=[];
                 if strcmp(Win(w),'Gauss')
-                    stimulWin = sum(exp(-0.5*((ACC(:,1)-(tempTO- sd))/(sd/3)).^2),2);
+                    stimulWin = sum(exp(-0.5*((ACC(:,1) - (tempTO - sd))/(sd/3)).^2),2);
                 end
                 
                 if strcmp(Win(w),'Rect')
@@ -145,12 +146,14 @@ for Sub = 1: length(names)
             end
         end
         
+        %TestandoJanelas( HeelStrike, ToeOff, FsFP, Fy, y )
+        
         %% --- Combinatorial Analysis
         
 %         t = 0; c = 0;
 %         for pct = 0: 0.01 : 1
             pct= 0.75; %% APAGAR
-            [ResultsTrials,ResultsCombinatorics] = combinatorics1(Var,Name,Sensors,ToeOffInd,Fs,p,y,pct, winPts);
+            [ResultsTrials,ResultsCombinatorics, indTs] = combinatorics1(Var,Name,Sensors,ToeOffInd,p,y,pct,winPts,Fy,HeelStrike,ToeOff,FsFP);
 %             
 %             RT(t+1:t+length(ResultsTrials)) = ResultsTrials;
 %             RC(c+1:c+length(ResultsCombinatorics)) = ResultsCombinatorics;
@@ -170,27 +173,7 @@ for Sub = 1: length(names)
 end
 
 
-%% Plot Fy
 
-HeelStrikeInd = ceil(HeelStrike*FsFP);
-ToeOffInd = ceil(ToeOff*FsFP);
-
-firstFP = HeelStrikeInd(:,1);
-lastFP =  ToeOffInd(:,end);
-
-for i = 1: length(lastFP)
-    ind = 1;
-    while isnan(lastFP(i))
-        lastFP(i) = ToeOffInd(i,end-1);
-        ind = ind + 1;
-    end
-    
-    cycle1 = ((firstFP(i):1:lastFP(i))-firstFP(i))/(lastFP(i)-firstFP(i));
-    figure(i);
-    subplot(2,1,1);
-    plot(cycle1, Fy(firstFP(i):lastFP(i),2:end));
-    title([Name,' Trial ', i]);
-end
 
 
 
