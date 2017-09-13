@@ -1,10 +1,11 @@
 function [ResultsindTrs,ResultsCombinatorics] = combinatorics1(Var,Name,Sensors,p,y,pct,ForceY,ToeOff,timeACC,indTr,indTs)
 
+
 %% -- Dividing forces
 trialsNumber = length(ToeOff);
 ind = 0;
 while rem(size(ForceY(1:end-ind,1)),trialsNumber)~=0
-ind = ind+1;
+    ind = ind+1;
 end
 
 [row,col] = size(ForceY(1:end-ind,:));
@@ -42,62 +43,68 @@ for k = 1: length(Var)
         
         % --- Applying Linear Combination
         
-        for j = 1 : length(indTs)           
+        for j = 1:length(indTs)
             for i = 1 : length(Sensors)
+                
+                index = indTs(j)+(i-1)*length(indTs);
                 
                 TP = 0; FP = 0; TN = 0; FN = 0;
                 n = n+1; disp(n)
                 
-                LinearCombination(:,j+(i-1)*length(indTs)) = pTs(:,:,j+(i-1)*length(indTs))*betaM;
+                LinearCombination(:,index) = pTs(:,:,(j)+(i-1)*length(indTs))*betaM;
                 
                 %% Plot Fy
-               
-                figure(j+(i-1)*length(indTs))
-                subplot(2,1,1); plot(Fy(:,1,j+(i-1)*length(indTs)), Fy(:,2:end,j+(i-1)*length(indTs)),'k');
-                hold on;
-                plot(timeACC(:,j+(i-1)*length(indTs)),1100*y(:,j+(i-1)*length(indTs)),'r')
-                title([' Trial ', num2str(j)]);
                 
-                subplot(2,1,2); plot(timeACC(:,j+(i-1)*length(indTs)),LinearCombination(:,j+(i-1)*length(indTs)));
-                ylim([min(LinearCombination(:,j+(i-1)*length(indTs)))*1.1 max(LinearCombination(:,j+(i-1)*length(indTs)))*1.1]);
+%                 figure(index)
+%                 subplot(2,1,1); plot(Fy(:,1,index), Fy(:,2:end,index),'k');
+%                 hold on;
+%                 plot(timeACC(:,index),1100*y(:,index),'r')
+%                 title([' Trial ', num2str(index)]);
+%                 
+%                 subplot(2,1,2); plot(timeACC(:,index),LinearCombination(:,index));
+%                 ylim([min(LinearCombination(:,index))*1.1 max(LinearCombination(:,index))*1.1]);
                 
                 %%  --- Checking the combination's quality
-                threshold = (max(LinearCombination(:,j+(i-1)*length(indTs))))*pct;
-                [pks,locs] = findpeaks(LinearCombination(:,j+(i-1)*length(indTs)),timeACC(:,j+(i-1)*length(indTs)),'MinPeakHeight',threshold);
+                threshold = (max(LinearCombination(:,index)))*pct;
+                [pks,locs] = findpeaks(LinearCombination(:,index),timeACC(:,index),'MinPeakHeight',threshold);
                 
-                for z = 1:length(locs)
-                    Line = line([locs(z) locs(z)], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
-                    set(Line,'Clipping','off')
+%                 for z = 1:length(locs)
+%                     Line = line([locs(z) locs(z)], [-1 100],'Linewidth',1,'Linestyle','--','Color',[0 0 0]);
+%                     set(Line,'Clipping','off')
+%                 end
+                
+                ind = [Fy(1,1,index), ToeOff(index,:),Fy(end,1,index)+0.1];
+                ind(isnan(ind))=[];
+                
+                for w = 2: length(ind)
+                    center = ((ind(w)-0.1) + ind(w-1))/2;
+                    radius = abs(ind(w)-0.1 - center);
                     
-% %                     for w = 1 : size(ToeOff,2)
-% %                         ind = ToeOff(indTs(j),w);
-% %                         
-% %                         if isnan(ind)
-% %                             
-% %                         else
-% %                             
-% %                             A = rangesearch(locs(z),ind-0.05,0.05);
-% %                             if isempty(A{1})
-% %                                 FN = FN+1;
-% %                             else
-% %                                 TP = TP+1;
-% %                             end
-% %                             A = rangesearch(locs(z),(ind-0.1)/2,(ind-0.1)/2);
-% %                             B = rangesearch(locs(z),((timeACC(end,j+(i-1)))+ind)/2,((timeACC(end,j+(i-1)))-ind)/2);
-% %                             if isempty(A{1}) || isempty(B{1})
-% %                                 TN = TN+1;
-% %                             else
-% %                                 FP = FP+1;
-% %                             end
-% %                             
-% %                             %---
-% %                             TPos = TPos + TP;
-% %                             TNeg = TNeg + TN;
-% %                             FPos = FPos + FP;
-% %                             FNeg = FNeg + FN;
-% %                         end
-% %                     end
+                    if w~= length(ind)
+                        A = rangesearch(locs,ind(w)-0.05,0.05);
+                        if isempty(A{1})
+                            FN = FN+1;
+                        else
+                            TP = TP+1;
+                        end
+                    end
+                    
+                    if center >= ind(1)
+                        A = rangesearch(locs,center,radius);
+                        if isempty(A{1})
+                            TN = TN+1;
+                        else
+                            FP = FP+1;
+                        end
+                    end
                 end
+                
+                %---
+                TPos = TPos + TP;
+                TNeg = TNeg + TN;
+                FPos = FPos + FP;
+                FNeg = FNeg + FN;
+                
                 % --- save
                 ResultsindTrs(n) = struct('Trial',{indTs(j)},'Sensor',{Sensors(i)},...
                     'Features',{Var(Features)},'Locs',{locs},'Threshold',...

@@ -8,13 +8,14 @@ clear all; clc; close all
 % % csv = '-Delsys 1.csv';
 
 paths = {'.\Dropfoot\'};
-names = {'DCM\Descalco25_Dual_170831_1'};
+folders = {'DCM\'};
+names = {'Descalco25_Dual_170831_1'};
 ext = {'-Delsys 1.csv'};
 shanksL = 2;
 shanksR = 1;
 sensor = {{'ShankR'}};
 
-Win = {'Gauss','Rect'};
+Win = {'Gauss'}; %,'Rect'};
 
 %% -- Initializing some variables
 
@@ -45,13 +46,14 @@ for Sub = 1: length(names)
     for w = 1: length(Win)
         
         Path = paths{Sub};
+        Folder = folders{Sub};
         Name = names {Sub};
         csv = ext{Sub};
         ShankR = shanksR(Sub); %ShankL = shanksL(Sub);
         Sensors = sensor{Sub};
         
         
-        FilePath = [Path,Name];
+        FilePath = [Path,Folder,Name];
         
         %% Loading Data
         
@@ -59,8 +61,8 @@ for Sub = 1: length(names)
         
         instant = importdata('Instantes_gait1.txt',';');
         
-        [NewInstant] = ReshapeInstants(deltaT, instant,Name);
-        [ToeOff, HeelStrike] = ReshapeInstants1(deltaT, instant,Name);
+        %[NewInstant] = ReshapeInstants(deltaT, instant,[Folder,Name]);
+        [ToeOff, HeelStrike] = ReshapeInstants1(deltaT, instant,[Folder,Name]);
         
         
         tic
@@ -153,8 +155,8 @@ for Sub = 1: length(names)
         
         t = 0; c = 0;
         for pct = 0: 0.01 : 1
-            pct= 0.75; %% APAGAR
-            [ResultsindTrs,ResultsCombinatorics] = combinatorics1(Var,Name,Sensors,p,y,pct,Fy,ToeOff,timeACC,indTr,indTs);
+
+            [ResultsTrials,ResultsCombinatorics] = combinatorics1(Var,[Folder,Name],Sensors,p,y,pct,Fy,ToeOff,timeACC,indTr,indTs);
             
             RT(t+1:t+length(ResultsTrials)) = ResultsTrials;
             RC(c+1:c+length(ResultsCombinatorics)) = ResultsCombinatorics;
@@ -164,8 +166,8 @@ for Sub = 1: length(names)
             
         end
         
-        save(['RTsquare_',Name,'.mat'],'RT')
-        save(['RCsquare_',Name,'.mat'],'RC')
+        save(['RT_',Name,'.mat'],'RT')
+        save(['RC_',Name,'.mat'],'RC')
         RT(:) = []; RC(:) = [];
         
         toc
@@ -174,7 +176,10 @@ for Sub = 1: length(names)
 end
 
 
-
+% A = struct('Trial',{0},...
+% 'Features',{0},'Threshold',{0},'TP',{0},...
+% 'FP',{0},'TN',{0},'FN',{0},'beta',{0});
+% repmat(A,51100*16,1)
 
 
 
