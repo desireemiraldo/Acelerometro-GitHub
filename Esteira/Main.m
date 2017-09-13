@@ -42,6 +42,17 @@ sd = 50e-3;
 % --
 winPts = 202;
 
+% --
+
+RT = struct('Trial',{indTs(j)},'Features',{Var(Features)},...
+    'Locs',{locs},'Threshold',{pct},'TP',{TP},'FP',{FP},...
+    'TN',{TN},'FN',{FN},'beta',{beta});
+repmat(RT,51100*16,1);
+
+RC = struct('Trial',{0},'Features',{0},'Threshold',{0},'TP',{0},...
+'FP',{0},'TN',{0},'FN',{0},'beta',{0});
+repmat(RC,51100,1);
+
 for Sub = 1: length(names)
     for w = 1: length(Win)
         
@@ -168,18 +179,21 @@ for Sub = 1: length(names)
         
         save(['RT_',Name,'.mat'],'RT')
         save(['RC_',Name,'.mat'],'RC')
-        RT(:) = []; RC(:) = [];
+        
+        RT = struct('Trial',{indTs(j)},'Features',{Var(Features)},...
+            'Locs',{locs},'Threshold',{pct},'TP',{TP},'FP',{FP},...
+            'TN',{TN},'FN',{FN},'beta',{beta});
+        repmat(RT,51100*16,1);
+        
+        RC = struct('Trial',{0},'Features',{0},'Threshold',{0},'TP',{0},...
+            'FP',{0},'TN',{0},'FN',{0},'beta',{0});
+        repmat(RC,51100,1);
         
         toc
         
     end
 end
 
-
-% A = struct('Trial',{0},...
-% 'Features',{0},'Threshold',{0},'TP',{0},...
-% 'FP',{0},'TN',{0},'FN',{0},'beta',{0});
-% repmat(A,51100*16,1)
 
 
 
