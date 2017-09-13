@@ -15,8 +15,8 @@ for k = 1 : length(deltaT)
     
     i = find(instant.data(ind(1),:)>=first & instant.data(ind(1),:)<=last); %edit when using both legs
     
-    NewHS = instant.data(ind(1),i(find(rem(i,2)==1))) - deltaT(k,1);
-    NewTO = instant.data(ind(1),i(find(rem(i,2)==0))) - deltaT(k,1);
+    NewHS = instant.data(ind(1),i(find(rem(i,2)==1))); %- deltaT(k,1);
+    NewTO = instant.data(ind(1),i(find(rem(i,2)==0))); %- deltaT(k,1);
        
     ColNumber = size(ToeOff,2);
     

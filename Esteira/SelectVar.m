@@ -13,8 +13,8 @@ for k = 1:Trials
     end
 end
 
-for k = 1:Trials
-    Variable(:,1,k) = Variable(:,1,k) - Variable(1,1,k);
-end
+% for k = 1:Trials
+%     Variable(:,1,k) = Variable(:,1,k) - Variable(1,1,k);
+% end
 
 end

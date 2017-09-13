@@ -61,7 +61,7 @@ for Sub = 1: length(names)
         
         [NewInstant] = ReshapeInstants(deltaT, instant,Name);
         [ToeOff, HeelStrike] = ReshapeInstants1(deltaT, instant,Name);
-            
+        
         
         tic
         
@@ -119,16 +119,10 @@ for Sub = 1: length(names)
                 first(j) = min([HeelStrike(j,:),ToeOff(j,:)],[],2);
                 last(j) = max([HeelStrike(j,:),ToeOff(j,:)],[],2);
                 
-                ind = 1;
-%                 while isnan(last(i))
-%                     last(j) = ToeOffInd(i,end-1);
-%                     ind = ind + 1;
-%                 end
-                
                 tempTO = (ToeOff(j,:));
                 tempTO(isnan(tempTO))=[];
                 if strcmp(Win(w),'Gauss')
-                    stimulWin = sum(exp(-0.5*((ACC(:,1) - (tempTO - sd))/(sd/3)).^2),2);
+                    stimulWin = sum(exp(-0.5*((ACC(:,1,j) - (tempTO - sd))/(sd/3)).^2),2);
                 end
                 
                 if strcmp(Win(w),'Rect')
@@ -146,28 +140,35 @@ for Sub = 1: length(names)
             end
         end
         
-        %TestandoJanelas( HeelStrike, ToeOff, FsFP, Fy, y )
+        %% --- TESTANDO AS JANELAS DE ESTÍMULO
+        timeACC(:,:,1) = ACC(:,1,:);
+        %         figure;
+        %         plot(Fy(:,1),Fy(:,3),'k')
+        %         hold on
+        %         plot(timeACC,1100*y)
         
+        %% --  -- Select trials for trainning and test
+        [indTr,indTs] = PartData(ToeOff,16);
         %% --- Combinatorial Analysis
         
-%         t = 0; c = 0;
-%         for pct = 0: 0.01 : 1
+        t = 0; c = 0;
+        for pct = 0: 0.01 : 1
             pct= 0.75; %% APAGAR
-            [ResultsTrials,ResultsCombinatorics, indTs] = combinatorics1(Var,Name,Sensors,ToeOffInd,p,y,pct,winPts,Fy,HeelStrike,ToeOff,FsFP);
-%             
-%             RT(t+1:t+length(ResultsTrials)) = ResultsTrials;
-%             RC(c+1:c+length(ResultsCombinatorics)) = ResultsCombinatorics;
-%             
-%             t = length(RT);
-%             c = length(RC);
-%             
-%         end
-%         
-%         save(['RTsquare_',Name,'.mat'],'RT')
-%         save(['RCsquare_',Name,'.mat'],'RC')
-%         RT(:) = []; RC(:) = [];
-%         
-%         toc
+            [ResultsindTrs,ResultsCombinatorics] = combinatorics1(Var,Name,Sensors,p,y,pct,Fy,ToeOff,timeACC,indTr,indTs);
+            
+            RT(t+1:t+length(ResultsTrials)) = ResultsTrials;
+            RC(c+1:c+length(ResultsCombinatorics)) = ResultsCombinatorics;
+            
+            t = length(RT);
+            c = length(RC);
+            
+        end
+        
+        save(['RTsquare_',Name,'.mat'],'RT')
+        save(['RCsquare_',Name,'.mat'],'RC')
+        RT(:) = []; RC(:) = [];
+        
+        toc
         
     end
 end
